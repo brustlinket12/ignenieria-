@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Expediente Enviado{% endblock %}
+{% block content %}
+
+<div class="confirmacion-container">
+  <div class="confirmacion-card">
+    <div class="confirmacion-icon">✅</div>
+    <h1>Expediente enviado correctamente</h1>
+
+    <div class="confirmacion-details">
+      <div class="detail-row">
+        <span class="detail-label">Número de expediente:</span>
+        <span class="detail-value mono">EXP-DDC-2026-0847</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Cliente:</span>
+        <span class="detail-value">Inversiones Marítimas del Pacífico, S.A.</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Nivel de riesgo:</span>
+        <span class="detail-value"><span class="risk-badge risk-medio">MEDIO</span></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Estado:</span>
+        <span class="detail-value">Pendiente de aprobación</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Próxima revisión:</span>
+        <span class="detail-value">03/05/2028 (24 meses)</span>
+      </div>
+      <div class="detail-row detail-hash">
+        <span class="detail-label">Hash del expediente:</span>
+        <span class="detail-value mono" style="font-size:0.8rem">b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2</span>
+      </div>
+    </div>
+
+    <div class="confirmacion-actions">
+      <a href="/dashboard" class="btn btn-primary">Volver al Dashboard</a>
+      <a href="/historial/c-001" class="btn btn-outline">Ver Expediente</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

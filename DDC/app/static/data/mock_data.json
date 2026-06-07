@@ -1,0 +1,28 @@
+{
+  "CLIENTES": [
+    {"id": "c-001", "nombre": "Inversiones Marítimas del Pacífico, S.A.", "ruc": "RUC-655-814-102839-2023", "tipo": "JURIDICA", "riesgo": "MEDIO_ALTO", "ultimaRevision": "2024-04-10", "proximaRevision": "2025-04-10", "estado": "DDC_VENCIDA", "esPEP": false, "uuid": "3fa85f64-5717-4562-b3fc-1a2b3c4d5e6f", "fechaVinculacion": "2020-03-15", "sancionado": false},
+    {"id": "c-002", "nombre": "Carlos Méndez Herrera", "cedula": "8-234-5678", "tipo": "NATURAL", "riesgo": "BAJO", "ultimaRevision": "2024-11-15", "proximaRevision": "2026-11-15", "estado": "VIGENTE", "esPEP": false, "uuid": "4fa85f64-5717-4562-b3fc-2b3c4d5e6f7a", "fechaVinculacion": "2019-06-01", "sancionado": false},
+    {"id": "c-003", "nombre": "Ricardo Fernández Aguirre", "cedula": "3-118-2045", "tipo": "PEP", "riesgo": "MUY_ALTO", "ultimaRevision": "2024-01-20", "proximaRevision": "2025-01-20", "estado": "DDC_VENCIDA", "esPEP": true, "uuid": "5fa85f64-5717-4562-b3fc-3c4d5e6f7a8b", "fechaVinculacion": "2018-11-20", "sancionado": false},
+    {"id": "c-004", "nombre": "Logística Global Panama Corp.", "ruc": "RUC-123-456-789012-2021", "tipo": "JURIDICA", "riesgo": "ALTO", "ultimaRevision": "2025-03-01", "proximaRevision": "2026-03-01", "estado": "PROXIMA_A_VENCER", "esPEP": false, "uuid": "6fa85f64-5717-4562-b3fc-4d5e6f7a8b9c", "fechaVinculacion": "2021-01-10", "sancionado": false},
+    {"id": "c-005", "nombre": "Ana Torres Villarreal", "cedula": "4-201-3311", "tipo": "NATURAL", "riesgo": "BAJO", "ultimaRevision": "2023-06-10", "proximaRevision": "2026-06-10", "estado": "VIGENTE", "esPEP": false, "uuid": "7fa85f64-5717-4562-b3fc-5e6f7a8b9c0d", "fechaVinculacion": "2022-05-30", "sancionado": false},
+    {"id": "c-006", "nombre": "Cripto Assets International Inc.", "ruc": "RUC-890-123-456789-2022", "tipo": "JURIDICA", "riesgo": "MUY_ALTO", "ultimaRevision": "2025-02-14", "proximaRevision": "2026-02-14", "estado": "PENDIENTE_APROBACION", "esPEP": false, "uuid": "8fa85f64-5717-4562-b3fc-6f7a8b9c0d1e", "fechaVinculacion": "2022-08-12", "sancionado": false},
+    {"id": "c-007", "nombre": "Mossack & Asociados, S.A.", "ruc": "RUC-001-002-000001-2010", "tipo": "JURIDICA", "riesgo": "MUY_ALTO", "ultimaRevision": null, "proximaRevision": null, "estado": "BLOQUEADO_SANCIONES", "esPEP": false, "uuid": "9fa85f64-5717-4562-b3fc-7a8b9c0d1e2f", "fechaVinculacion": "2010-04-05", "sancionado": true},
+    {"id": "c-008", "nombre": "Transportes del Caribe, S.A.", "ruc": "RUC-321-654-987654-2019", "tipo": "JURIDICA", "riesgo": "MEDIO", "ultimaRevision": "2024-12-01", "proximaRevision": "2026-12-01", "estado": "VIGENTE", "esPEP": false, "uuid": "0fa85f64-5717-4562-b3fc-8b9c0d1e2f3a", "fechaVinculacion": "2019-09-22", "sancionado": false}
+  ],
+  "SECTORES": [
+    {"codigo": "H5012", "nombre": "Transporte Marítimo"},
+    {"codigo": "K6419", "nombre": "Banca"},
+    {"codigo": "J6110", "nombre": "Telecomunicaciones"},
+    {"codigo": "G4711", "nombre": "Comercio"},
+    {"codigo": "V6420", "nombre": "Criptomonedas"},
+    {"codigo": "I5510", "nombre": "Hotelería"}
+  ],
+  "JURISDICCIONES": [
+    {"codigo": "PA", "nombre": "Panamá"},
+    {"codigo": "US", "nombre": "Estados Unidos"},
+    {"codigo": "KY", "nombre": "Islas Caimán"},
+    {"codigo": "VG", "nombre": "Islas Vírgenes Británicas"},
+    {"codigo": "CH", "nombre": "Suiza"},
+    {"codigo": "CN", "nombre": "China"}
+  ]
+}

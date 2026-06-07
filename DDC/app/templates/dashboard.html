@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<!-- PAGE HEADER - title changes by role -->
+<div class="page-header">
+  <h1 id="dashboardTitle">Panel de Revisiones DDC</h1>
+  <span class="page-timestamp" id="liveTimestamp">14:32:07 UTC-5</span>
+</div>
+
+<!-- KPI CARDS - change by role -->
+<div id="kpiKYC" class="kpi-grid">
+  <div class="kpi-card"><div class="kpi-number">247</div><div class="kpi-label">Clientes activos</div><div class="kpi-icon">👥</div></div>
+  <div class="kpi-card kpi-danger"><div class="kpi-number">12</div><div class="kpi-label">🔴 DDC Vencidas</div><div class="kpi-icon">⚠️</div></div>
+  <div class="kpi-card kpi-pending"><div class="kpi-number">3</div><div class="kpi-label">🔵 Pendientes de aprobación</div><div class="kpi-icon">✓</div></div>
+  <div class="kpi-card kpi-warning"><div class="kpi-number">18</div><div class="kpi-label">🟡 Próximas a vencer (30 días)</div><div class="kpi-icon">📅</div></div>
+</div>
+<div id="kpiCumplimiento" class="kpi-grid" style="display:none">
+  <div class="kpi-card kpi-pending"><div class="kpi-number">3</div><div class="kpi-label">🔵 Pend. aprobación</div><div class="kpi-icon">✓</div></div>
+  <div class="kpi-card kpi-danger"><div class="kpi-number">1</div><div class="kpi-label">🔴 SLA Vencido</div><div class="kpi-icon">⏰</div></div>
+  <div class="kpi-card kpi-warning"><div class="kpi-number">1</div><div class="kpi-label">🟡 SLA por vencer</div><div class="kpi-icon">⚠️</div></div>
+  <div class="kpi-card"><div class="kpi-number">247</div><div class="kpi-label">Clientes activos</div><div class="kpi-icon">👥</div></div>
+</div>
+<div id="kpiAuditor" class="kpi-grid" style="display:none">
+  <div class="kpi-card"><div class="kpi-number">1,847</div><div class="kpi-label">Registros de auditoría</div><div class="kpi-icon">📋</div></div>
+  <div class="kpi-card kpi-pending"><div class="kpi-number">20</div><div class="kpi-label">Acciones hoy</div><div class="kpi-icon">📝</div></div>
+  <div class="kpi-card kpi-warning"><div class="kpi-number">5</div><div class="kpi-label">Exportaciones este mes</div><div class="kpi-icon">📤</div></div>
+  <div class="kpi-card"><div class="kpi-number">0</div><div class="kpi-label">Gaps de auditoría</div><div class="kpi-icon">✅</div></div>
+</div>
+
+<!-- TABS - change by role -->
+<div class="dashboard-tabs" id="dashboardTabs">
+  <!-- KYC tabs -->
+  <button class="tab-btn active" data-tab="clientes" data-rol="OFICIAL_KYC" onclick="switchTab('clientes')">Clientes</button>
+  <button class="tab-btn" data-tab="mis-revisiones" data-rol="OFICIAL_KYC" onclick="switchTab('mis-revisiones')">Mis Revisiones</button>
+  <!-- Cumplimiento tabs -->
+  <button class="tab-btn active" data-tab="aprobaciones" data-rol="OFICIAL_CUMPLIMIENTO" onclick="switchTab('aprobaciones')">Aprobaciones Pendientes</button>
+  <button class="tab-btn" data-tab="clientes-cpl" data-rol="OFICIAL_CUMPLIMIENTO" onclick="switchTab('clientes-cpl')">Clientes</button>
+  <!-- Auditor tabs -->
+  <button class="tab-btn active" data-tab="auditoria" data-rol="AUDITOR_INTERNO" onclick="switchTab('auditoria')">Log de Auditoría</button>
+  <button class="tab-btn" data-tab="clientes-aud" data-rol="AUDITOR_INTERNO" onclick="switchTab('clientes-aud')">Clientes</button>
+</div>
+
+<!-- ========== TAB: CLIENTES (KYC version - full table) ========== -->
+<div class="tab-content" id="tab-clientes">
+  <div class="table-filters">
+    <input type="text" placeholder="🔍 Buscar nombre o RUC..." class="filter-input" onkeyup="filtrarTabla('clientesTable')">
+    <select class="filter-select" onchange="filtrarTabla('clientesTable')">
+      <option value="">▼ Nivel de Riesgo</option>
+      <option value="BAJO">BAJO</option>
+      <option value="MEDIO">MEDIO</option>
+      <option value="ALTO">ALTO</option>
+      <option value="MUY_ALTO">MUY ALTO</option>
+    </select>
+    <select class="filter-select" onchange="filtrarTabla('clientesTable')">
+      <option value="">▼ Estado DDC</option>
+      <option value="VIGENTE">VIGENTE</option>
+      <option value="PROXIMA">PRÓX. VENCER</option>
+      <option value="DDC_VENCIDA">DDC VENCIDA</option>
+      <option value="PENDIENTE">PEND. APROB.</option>
+      <option value="BLOQUEADO">BLOQUEADO</option>
+    </select>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table" id="clientesTable">
+      <thead><tr><th>#</th><th>Nombre / Razón Social</th><th>Cédula / RUC</th><th>Tipo</th><th>Riesgo</th><th>Última Revisión</th><th>Próxima Revisión</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>
+        <tr class="row-vencida"><td>1</td><td><a href="/historial/c-001">Inversiones Marítimas del Pacífico, S.A.</a></td><td class="cell-mono">RUC-655-814-102839-2023</td><td>Jurídica</td><td><span class="risk-badge risk-medio">MEDIO</span></td><td>10/04/2024</td><td>10/04/2025</td><td><span class="status-badge status-vencida pulse">🔴 DDC VENCIDA</span></td><td class="cell-actions"><a href="/historial/c-001" class="btn-sm">Ver</a><a href="/ddc/formulario/c-001" class="btn-sm btn-accent-sm btn-nueva-ddc">Nueva DDC</a></td></tr>
+        <tr><td>2</td><td><a href="/historial/c-002">Carlos Méndez Herrera</a></td><td class="cell-mono">8-234-5678</td><td>Natural</td><td><span class="risk-badge risk-bajo">BAJO</span></td><td>15/11/2024</td><td>15/11/2026</td><td><span class="status-badge status-vigente">🟢 VIGENTE</span></td><td class="cell-actions"><a href="/historial/c-002" class="btn-sm">Ver</a><a href="/ddc/formulario/c-002" class="btn-sm btn-accent-sm btn-nueva-ddc">Nueva DDC</a></td></tr>
+        <tr class="row-vencida"><td>3</td><td><a href="/historial/c-003">Ricardo Fernández Aguirre</a></td><td class="cell-mono">3-118-2045</td><td>PEP</td><td><span class="risk-badge risk-muy-alto">MUY ALTO</span></td><td>20/01/2024</td><td>20/01/2025</td><td><span class="status-badge status-vencida pulse">🔴 DDC VENCIDA</span></td><td class="cell-actions"><a href="/historial/c-003" class="btn-sm">Ver</a><a href="/ddc/formulario/c-003" class="btn-sm btn-accent-sm btn-nueva-ddc">Nueva DDC</a></td></tr>
+        <tr><td>4</td><td><a href="/historial/c-004">Logística Global Panama Corp.</a></td><td class="cell-mono">RUC-123-456-789012-2021</td><td>Jurídica</td><td><span class="risk-badge risk-alto">ALTO</span></td><td>01/03/2025</td><td>01/03/2026</td><td><span class="status-badge status-proxima">🟡 PRÓX. VENCER</span></td><td class="cell-actions"><a href="/historial/c-004" class="btn-sm">Ver</a><a href="/ddc/formulario/c-004" class="btn-sm btn-accent-sm btn-nueva-ddc">Nueva DDC</a></td></tr>
+        <tr><td>5</td><td><a href="/historial/c-005">Ana Torres Villarreal</a></td><td class="cell-mono">4-201-3311</td><td>Natural</td><td><span class="risk-badge risk-bajo">BAJO</span></td><td>10/06/2023</td><td>10/06/2026</td><td><span class="status-badge status-vigente">🟢 VIGENTE</span></td><td class="cell-actions"><a href="/historial/c-005" class="btn-sm">Ver</a><a href="/ddc/formulario/c-005" class="btn-sm btn-accent-sm btn-nueva-ddc">Nueva DDC</a></td></tr>
+        <tr><td>6</td><td><a href="/historial/c-006">Cripto Assets International Inc.</a></td><td class="cell-mono">RUC-890-123-456789-2022</td><td>Jurídica</td><td><span class="risk-badge risk-muy-alto">MUY ALTO</span></td><td>14/02/2025</td><td>14/02/2026</td><td><span class="status-badge status-pendiente">🔵 PEND. APROB.</span></td><td class="cell-actions"><a href="/historial/c-006" class="btn-sm">Ver</a></td></tr>
+        <tr class="row-bloqueado"><td>7</td><td><a href="/historial/c-007">Mossack & Asociados, S.A.</a></td><td class="cell-mono">RUC-001-002-000001-2010</td><td>Jurídica</td><td><span class="risk-badge risk-muy-alto">MUY ALTO</span></td><td>—</td><td>—</td><td><span class="status-badge status-bloqueado">⛔ BLOQUEADO</span></td><td class="cell-actions"><a href="/historial/c-007" class="btn-sm">Ver</a></td></tr>
+        <tr><td>8</td><td><a href="/historial/c-008">Transportes del Caribe, S.A.</a></td><td class="cell-mono">RUC-321-654-987654-2019</td><td>Jurídica</td><td><span class="risk-badge risk-medio">MEDIO</span></td><td>01/12/2024</td><td>01/12/2026</td><td><span class="status-badge status-vigente">🟢 VIGENTE</span></td><td class="cell-actions"><a href="/historial/c-008" class="btn-sm">Ver</a><a href="/ddc/formulario/c-008" class="btn-sm btn-accent-sm btn-nueva-ddc">Nueva DDC</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== TAB: MIS REVISIONES (KYC only) ========== -->
+<div class="tab-content" id="tab-mis-revisiones" style="display:none">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead><tr><th>Expediente</th><th>Cliente</th><th>Fecha envío</th><th>Estado</th><th>Nivel de Riesgo</th><th>Acciones</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">EXP-DDC-2026-0847</td><td>Inversiones Marítimas</td><td>03/05/2026</td><td><span class="status-badge status-pendiente">🔵 Pend. aprobación</span></td><td><span class="risk-badge risk-medio">MEDIO</span></td><td><a href="/historial/c-001" class="btn-sm">Ver</a></td></tr>
+        <tr><td class="mono">EXP-DDC-2025-1203</td><td>Carlos Méndez Herrera</td><td>15/11/2024</td><td><span class="status-badge status-vigente">🟢 Aprobado</span></td><td><span class="risk-badge risk-bajo">BAJO</span></td><td><a href="/historial/c-002" class="btn-sm">Ver</a></td></tr>
+        <tr><td class="mono">EXP-DDC-2025-0412</td><td>Ana Torres Villarreal</td><td>10/06/2023</td><td><span class="status-badge status-vigente">🟢 Aprobado</span></td><td><span class="risk-badge risk-bajo">BAJO</span></td><td><a href="/historial/c-005" class="btn-sm">Ver</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== TAB: APROBACIONES (Cumplimiento only) ========== -->
+<div class="tab-content" id="tab-aprobaciones" style="display:none">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead><tr><th>Cliente</th><th>Riesgo</th><th>PEP</th><th>Oficial KYC</th><th>En cola</th><th>SLA</th><th>Acciones</th></tr></thead>
+      <tbody>
+        <tr id="apr-001"><td><a href="/historial/c-006">Cripto Assets International Inc.</a></td><td><span class="risk-badge risk-muy-alto">MUY ALTO</span></td><td>No</td><td>J. Ávila</td><td>18h</td><td><span class="sla-badge sla-ok">🟢 OK</span></td><td class="cell-actions"><a href="/historial/c-006" class="btn-sm btn-ver-sm">Ver</a><button class="btn-sm" onclick="abrirModal('aprobar','apr-001','Cripto Assets International Inc.','MUY ALTO','No')">Aprobar</button><button class="btn-sm btn-danger-sm" onclick="abrirModal('rechazar','apr-001','Cripto Assets International Inc.','MUY ALTO','No')">Rechazar</button></td></tr>
+        <tr id="apr-002"><td><a href="/historial/c-003">Ricardo Fernández Aguirre</a></td><td><span class="risk-badge risk-muy-alto">MUY ALTO</span></td><td>✓ Sí</td><td>M. Rodríguez</td><td>71h</td><td><span class="sla-badge sla-alerta">🟡 Por vencer</span></td><td class="cell-actions"><a href="/historial/c-003" class="btn-sm btn-ver-sm">Ver</a><button class="btn-sm" onclick="abrirModal('aprobar','apr-002','Ricardo Fernández Aguirre','MUY ALTO','Sí')">Aprobar</button><button class="btn-sm btn-danger-sm" onclick="abrirModal('rechazar','apr-002','Ricardo Fernández Aguirre','MUY ALTO','Sí')">Rechazar</button></td></tr>
+        <tr id="apr-003" class="row-sla-vencido"><td><a href="/historial/c-004">Logística Global Panama Corp.</a></td><td><span class="risk-badge risk-alto">ALTO</span></td><td>No</td><td>C. Dutary</td><td>96h</td><td><span class="sla-badge sla-vencido">🔴 SLA VENCIDO</span></td><td class="cell-actions"><a href="/historial/c-004" class="btn-sm btn-ver-sm">Ver</a><button class="btn-sm" onclick="abrirModal('aprobar','apr-003','Logística Global Panama Corp.','ALTO','No')">Aprobar</button><button class="btn-sm btn-danger-sm" onclick="abrirModal('rechazar','apr-003','Logística Global Panama Corp.','ALTO','No')">Rechazar</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== TAB: CLIENTES (Cumplimiento - simplified) ========== -->
+<div class="tab-content" id="tab-clientes-cpl" style="display:none">
+  <div class="table-filters">
+    <input type="text" placeholder="🔍 Buscar nombre o RUC..." class="filter-input" onkeyup="filtrarTabla('clientesCplTable')">
+    <select class="filter-select" onchange="filtrarTabla('clientesCplTable')">
+      <option value="">▼ Nivel de Riesgo</option>
+      <option value="BAJO">BAJO</option>
+      <option value="MEDIO">MEDIO</option>
+      <option value="ALTO">ALTO</option>
+      <option value="MUY_ALTO">MUY ALTO</option>
+    </select>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table" id="clientesCplTable">
+      <thead><tr><th>#</th><th>Nombre / Razón Social</th><th>Cédula / RUC</th><th>Riesgo</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>
+        <tr class="row-vencida"><td>1</td><td><a href="/historial/c-001">Inversiones Marítimas del Pacífico, S.A.</a></td><td class="cell-mono">RUC-655-814-102839-2023</td><td><span class="risk-badge risk-medio">MEDIO</span></td><td><span class="status-badge status-vencida">DDC VENCIDA</span></td><td><a href="/historial/c-001" class="btn-sm">Ver</a></td></tr>
+        <tr><td>2</td><td><a href="/historial/c-002">Carlos Méndez Herrera</a></td><td class="cell-mono">8-234-5678</td><td><span class="risk-badge risk-bajo">BAJO</span></td><td><span class="status-badge status-vigente">VIGENTE</span></td><td><a href="/historial/c-002" class="btn-sm">Ver</a></td></tr>
+        <tr class="row-vencida"><td>3</td><td><a href="/historial/c-003">Ricardo Fernández Aguirre</a></td><td class="cell-mono">3-118-2045</td><td><span class="risk-badge risk-muy-alto">MUY ALTO</span></td><td><span class="status-badge status-vencida">DDC VENCIDA</span></td><td><a href="/historial/c-003" class="btn-sm">Ver</a></td></tr>
+        <tr><td>4</td><td><a href="/historial/c-004">Logística Global Panama Corp.</a></td><td class="cell-mono">RUC-123-456-789012-2021</td><td><span class="risk-badge risk-alto">ALTO</span></td><td><span class="status-badge status-proxima">PRÓX. VENCER</span></td><td><a href="/historial/c-004" class="btn-sm">Ver</a></td></tr>
+        <tr><td>5</td><td><a href="/historial/c-005">Ana Torres Villarreal</a></td><td class="cell-mono">4-201-3311</td><td><span class="risk-badge risk-bajo">BAJO</span></td><td><span class="status-badge status-vigente">VIGENTE</span></td><td><a href="/historial/c-005" class="btn-sm">Ver</a></td></tr>
+        <tr><td>6</td><td><a href="/historial/c-006">Cripto Assets International Inc.</a></td><td class="cell-mono">RUC-890-123-456789-2022</td><td><span class="risk-badge risk-muy-alto">MUY ALTO</span></td><td><span class="status-badge status-pendiente">PEND. APROB.</span></td><td><a href="/historial/c-006" class="btn-sm">Ver</a></td></tr>
+        <tr class="row-bloqueado"><td>7</td><td><a href="/historial/c-007">Mossack & Asociados, S.A.</a></td><td class="cell-mono">RUC-001-002-000001-2010</td><td><span class="risk-badge risk-muy-alto">MUY ALTO</span></td><td><span class="status-badge status-bloqueado">BLOQUEADO</span></td><td><a href="/historial/c-007" class="btn-sm">Ver</a></td></tr>
+        <tr><td>8</td><td><a href="/historial/c-008">Transportes del Caribe, S.A.</a></td><td class="cell-mono">RUC-321-654-987654-2019</td><td><span class="risk-badge risk-medio">MEDIO</span></td><td><span class="status-badge status-vigente">VIGENTE</span></td><td><a href="/historial/c-008" class="btn-sm">Ver</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== TAB: AUDITORÍA (Auditor only) ========== -->
+<div class="tab-content" id="tab-auditoria" style="display:none">
+  <div class="table-filters">
+    <input type="date" class="filter-input" style="max-width:160px"><input type="date" class="filter-input" style="max-width:160px">
+    <select class="filter-select"><option value="">▼ Tipo de Acción</option><option>CREATE</option><option>UPDATE</option><option>READ</option><option>APPROVE</option><option>REJECT</option><option>EXPORT</option></select>
+    <select class="filter-select"><option value="">▼ Usuario</option><option>usr-00391 · KYC</option><option>usr-00287 · CUMPL</option><option>usr-00412 · AUDIT</option></select>
+    <input type="text" placeholder="🔍 Buscar cliente..." class="filter-input">
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead><tr><th>Timestamp</th><th>Usuario</th><th>Acción</th><th>Cliente</th><th>Delta</th><th>IP</th><th>Hash SHA-256</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2026-05-03T14:14:32Z</td><td>usr-00391 · KYC</td><td><span class="action-badge action-update">UPDATE</span></td><td><a href="/historial/c-001">Inv. Marítimas</a></td><td><span class="delta-tooltip" title='{"antes":null,"despues":"updated"}'>📋</span></td><td class="mono">10.0.2.45</td><td class="mono hash-trunc">a3f9c2d1...</td><td><a href="/historial/c-001" class="btn-sm">Leer</a></td></tr>
+        <tr><td class="mono">2026-05-03T13:58:01Z</td><td>usr-00391 · KYC</td><td><span class="action-badge action-create">CREATE</span></td><td><a href="/historial/c-001">Inv. Marítimas</a></td><td><span class="delta-tooltip" title='{"antes":null,"despues":"created"}'>📋</span></td><td class="mono">10.0.2.45</td><td class="mono hash-trunc">b2c1d0e9...</td><td><a href="/historial/c-001" class="btn-sm">Leer</a></td></tr>
+        <tr><td class="mono">2026-05-03T12:30:15Z</td><td>usr-00287 · CUMPL</td><td><span class="action-badge action-approve">APPROVE</span></td><td><a href="/historial/c-006">Cripto Assets</a></td><td><span class="delta-tooltip" title='{"antes":"PENDIENTE","despues":"APROBADO"}'>📋</span></td><td class="mono">10.0.1.12</td><td class="mono hash-trunc">c3d2e1f0...</td><td><a href="/historial/c-006" class="btn-sm">Leer</a></td></tr>
+        <tr><td class="mono">2026-05-02T16:45:22Z</td><td>usr-00391 · KYC</td><td><span class="action-badge action-read">READ</span></td><td><a href="/historial/c-003">R. Fernández</a></td><td><span class="delta-tooltip" title='{"antes":null,"despues":"read"}'>📋</span></td><td class="mono">10.0.2.45</td><td class="mono hash-trunc">d4e3f2a1...</td><td><a href="/historial/c-003" class="btn-sm">Leer</a></td></tr>
+        <tr><td class="mono">2026-05-02T15:20:08Z</td><td>usr-00412 · AUDIT</td><td><span class="action-badge action-export">EXPORT</span></td><td><a href="/historial/c-007">Mossack & Asoc.</a></td><td><span class="delta-tooltip" title='{"antes":null,"despues":"exported"}'>📋</span></td><td class="mono">10.0.3.07</td><td class="mono hash-trunc">e5f4a3b2...</td><td><a href="/historial/c-007" class="btn-sm">Leer</a></td></tr>
+        <tr><td class="mono">2026-05-02T11:05:44Z</td><td>usr-00287 · CUMPL</td><td><span class="action-badge action-reject">REJECT</span></td><td><a href="/historial/c-004">Logística Global</a></td><td><span class="delta-tooltip" title='{"antes":"PENDIENTE","despues":"DEVUELTO"}'>📋</span></td><td class="mono">10.0.1.12</td><td class="mono hash-trunc">f6a5b4c3...</td><td><a href="/historial/c-004" class="btn-sm">Leer</a></td></tr>
+        <tr><td class="mono">2026-05-01T09:30:00Z</td><td>usr-00391 · KYC</td><td><span class="action-badge action-create">CREATE</span></td><td><a href="/historial/c-002">C. Méndez</a></td><td><span class="delta-tooltip" title='{"antes":null,"despues":"created"}'>📋</span></td><td class="mono">10.0.2.45</td><td class="mono hash-trunc">a7b6c5d4...</td><td><a href="/historial/c-002" class="btn-sm">Leer</a></td></tr>
+        <tr><td class="mono">2026-04-30T17:15:33Z</td><td>usr-00391 · KYC</td><td><span class="action-badge action-update">UPDATE</span></td><td><a href="/historial/c-005">Ana Torres</a></td><td><span class="delta-tooltip" title='{"antes":null,"despues":"updated"}'>📋</span></td><td class="mono">10.0.2.45</td><td class="mono hash-trunc">b8c7d6e5...</td><td><a href="/historial/c-005" class="btn-sm">Leer</a></td></tr>
+        <tr><td class="mono">2026-04-28T10:22:11Z</td><td>usr-00287 · CUMPL</td><td><span class="action-badge action-approve">APPROVE</span></td><td><a href="/historial/c-008">Transportes Caribe</a></td><td><span class="delta-tooltip" title='{"antes":"PENDIENTE","despues":"APROBADO"}'>📋</span></td><td class="mono">10.0.1.12</td><td class="mono hash-trunc">c9d8e7f6...</td><td><a href="/historial/c-008" class="btn-sm">Leer</a></td></tr>
+        <tr><td class="mono">2026-04-25T08:30:45Z</td><td>usr-00412 · AUDIT</td><td><span class="action-badge action-read">READ</span></td><td><a href="/historial/c-001">Inv. Marítimas</a></td><td><span class="delta-tooltip" title='{"antes":null,"despues":"read"}'>📋</span></td><td class="mono">10.0.3.07</td><td class="mono hash-trunc">d0e9f8a7...</td><td><a href="/historial/c-001" class="btn-sm">Leer</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="pagination"><span>Mostrando 1-10 de 20 entradas</span><div class="pagination-buttons"><button class="btn-sm" disabled>← Anterior</button><button class="btn-sm btn-active">1</button><button class="btn-sm">2</button><button class="btn-sm">Siguiente →</button></div></div>
+</div>
+
+<!-- ========== TAB: CLIENTES (Auditor - simplified, read-only) ========== -->
+<div class="tab-content" id="tab-clientes-aud" style="display:none">
+  <div class="table-filters">
+    <input type="text" placeholder="🔍 Buscar nombre o RUC..." class="filter-input" onkeyup="filtrarTabla('clientesAudTable')">
+    <select class="filter-select" onchange="filtrarTabla('clientesAudTable')">
+      <option value="">▼ Nivel de Riesgo</option>
+      <option value="BAJO">BAJO</option>
+      <option value="MEDIO">MEDIO</option>
+      <option value="ALTO">ALTO</option>
+      <option value="MUY_ALTO">MUY ALTO</option>
+    </select>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table" id="clientesAudTable">
+      <thead><tr><th>#</th><th>Nombre / Razón Social</th><th>Cédula / RUC</th><th>Riesgo</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>
+        <tr class="row-vencida"><td>1</td><td><a href="/historial/c-001">Inversiones Marítimas del Pacífico, S.A.</a></td><td class="cell-mono">RUC-655-814-102839-2023</td><td><span class="risk-badge risk-medio">MEDIO</span></td><td><span class="status-badge status-vencida">DDC VENCIDA</span></td><td><a href="/historial/c-001" class="btn-sm">Ver</a></td></tr>
+        <tr><td>2</td><td><a href="/historial/c-002">Carlos Méndez Herrera</a></td><td class="cell-mono">8-234-5678</td><td><span class="risk-badge risk-bajo">BAJO</span></td><td><span class="status-badge status-vigente">VIGENTE</span></td><td><a href="/historial/c-002" class="btn-sm">Ver</a></td></tr>
+        <tr class="row-vencida"><td>3</td><td><a href="/historial/c-003">Ricardo Fernández Aguirre</a></td><td class="cell-mono">3-118-2045</td><td><span class="risk-badge risk-muy-alto">MUY ALTO</span></td><td><span class="status-badge status-vencida">DDC VENCIDA</span></td><td><a href="/historial/c-003" class="btn-sm">Ver</a></td></tr>
+        <tr><td>4</td><td><a href="/historial/c-004">Logística Global Panama Corp.</a></td><td class="cell-mono">RUC-123-456-789012-2021</td><td><span class="risk-badge risk-alto">ALTO</span></td><td><span class="status-badge status-proxima">PRÓX. VENCER</span></td><td><a href="/historial/c-004" class="btn-sm">Ver</a></td></tr>
+        <tr><td>5</td><td><a href="/historial/c-005">Ana Torres Villarreal</a></td><td class="cell-mono">4-201-3311</td><td><span class="risk-badge risk-bajo">BAJO</span></td><td><span class="status-badge status-vigente">VIGENTE</span></td><td><a href="/historial/c-005" class="btn-sm">Ver</a></td></tr>
+        <tr><td>6</td><td><a href="/historial/c-006">Cripto Assets International Inc.</a></td><td class="cell-mono">RUC-890-123-456789-2022</td><td><span class="risk-badge risk-muy-alto">MUY ALTO</span></td><td><span class="status-badge status-pendiente">PEND. APROB.</span></td><td><a href="/historial/c-006" class="btn-sm">Ver</a></td></tr>
+        <tr class="row-bloqueado"><td>7</td><td><a href="/historial/c-007">Mossack & Asociados, S.A.</a></td><td class="cell-mono">RUC-001-002-000001-2010</td><td><span class="risk-badge risk-muy-alto">MUY ALTO</span></td><td><span class="status-badge status-bloqueado">BLOQUEADO</span></td><td><a href="/historial/c-007" class="btn-sm">Ver</a></td></tr>
+        <tr><td>8</td><td><a href="/historial/c-008">Transportes del Caribe, S.A.</a></td><td class="cell-mono">RUC-321-654-987654-2019</td><td><span class="risk-badge risk-medio">MEDIO</span></td><td><span class="status-badge status-vigente">VIGENTE</span></td><td><a href="/historial/c-008" class="btn-sm">Ver</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== APROBAR MODAL ========== -->
+<div class="modal-overlay" id="modalAprobar" onclick="cerrarModal('modalAprobar')" style="display:none">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <h3>✓ Aprobar Expediente</h3>
+    <div class="modal-body">
+      <p><strong>Cliente:</strong> <span id="apCliente"></span></p>
+      <p><strong>Nivel:</strong> <span id="apRiesgo"></span> · <strong>PEP:</strong> <span id="apPep"></span></p>
+      <div class="form-group"><label>Comentarios (opcional):</label><textarea id="apComentarios" class="form-input" rows="3"></textarea></div>
+      <div class="form-group"><label>Confirmar con código MFA:</label><div class="mfa-inputs" style="justify-content:flex-start"><input type="text" maxlength="1" class="mfa-box mfa-aprobar"><input type="text" maxlength="1" class="mfa-box mfa-aprobar"><input type="text" maxlength="1" class="mfa-box mfa-aprobar"><input type="text" maxlength="1" class="mfa-box mfa-aprobar"><input type="text" maxlength="1" class="mfa-box mfa-aprobar"><input type="text" maxlength="1" class="mfa-box mfa-aprobar"></div><p class="form-hint">(cualquier código de 6 dígitos)</p><div class="modal-error" id="apError" role="alert"></div></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="cerrarModal('modalAprobar')">Cancelar</button><button class="btn btn-success" onclick="confirmarAprobar()">✓ Confirmar Aprobación</button></div>
+  </div>
+</div>
+
+<!-- ========== RECHAZAR MODAL ========== -->
+<div class="modal-overlay" id="modalRechazar" onclick="cerrarModal('modalRechazar')" style="display:none">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <h3>✕ Rechazar Expediente</h3>
+    <div class="modal-body">
+      <p><strong>Cliente:</strong> <span id="reCliente"></span></p>
+      <div class="form-group"><label>Motivo del rechazo (obligatorio):</label><textarea id="reMotivo" class="form-input" rows="4" onkeyup="document.getElementById('reCharCount').textContent=this.value.length"></textarea><div class="char-counter"><span id="reCharCount">0</span> / 500 · Mín. 20 caracteres</div><div class="modal-error" id="reError" role="alert"></div></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="cerrarModal('modalRechazar')">Cancelar</button><button class="btn btn-danger" onclick="confirmarRechazar()">✕ Rechazar</button></div>
+  </div>
+</div>
+
+<script>
+function filtrarTabla(tableId) {
+  var input = document.querySelector('#' + tableId).closest('.tab-content').querySelector('.filter-input');
+  var selects = document.querySelector('#' + tableId).closest('.tab-content').querySelectorAll('.filter-select');
+  var q = input ? input.value.toLowerCase() : '';
+  var rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+  rows.forEach(function(row) {
+    var text = row.textContent.toLowerCase();
+    var match = !q || text.includes(q);
+    row.style.display = match ? '' : 'none';
+  });
+}
+
+function switchTab(tabName) {
+  // Determine role
+  var rol = localStorage.getItem('rol') || 'OFICIAL_KYC';
+  // Define which tab groups belong to which role
+  var roleTabs = {
+    'OFICIAL_KYC': ['clientes', 'mis-revisiones'],
+    'OFICIAL_CUMPLIMIENTO': ['aprobaciones', 'clientes-cpl'],
+    'AUDITOR_INTERNO': ['auditoria', 'clientes-aud']
+  };
+  var tabs = roleTabs[rol] || [];
+  // Hide all tab contents for this role
+  tabs.forEach(function(t) {
+    var el = document.getElementById('tab-' + t);
+    if (el) el.style.display = 'none';
+  });
+  // Show selected
+  var target = document.getElementById('tab-' + tabName);
+  if (target) target.style.display = 'block';
+  // Update tab buttons
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.classList.remove('active');
+    if (btn.getAttribute('data-tab') === tabName) btn.classList.add('active');
+  });
+}
+
+function abrirModal(tipo, expId, cliente, riesgo, pep) {
+  window.expIdActual = expId;
+  if (tipo === 'aprobar') {
+    document.getElementById('apCliente').textContent = cliente;
+    document.getElementById('apRiesgo').textContent = riesgo;
+    document.getElementById('apPep').textContent = pep;
+    document.getElementById('modalAprobar').style.display = 'flex';
+    document.getElementById('apError').textContent = '';
+  } else {
+    document.getElementById('reCliente').textContent = cliente;
+    document.getElementById('reMotivo').value = '';
+    document.getElementById('reCharCount').textContent = '0';
+    document.getElementById('modalRechazar').style.display = 'flex';
+    document.getElementById('reError').textContent = '';
+  }
+}
+
+function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function confirmarAprobar() {
+  var boxes = document.querySelectorAll('.mfa-aprobar');
+  var code = '';
+  boxes.forEach(function(b) { code += b.value; });
+  if (code.length !== 6) { document.getElementById('apError').textContent = 'Ingrese un código MFA de 6 dígitos.'; return; }
+  cerrarModal('modalAprobar');
+  var fila = document.getElementById(window.expIdActual);
+  if (fila) { fila.style.transition = 'opacity 0.5s'; fila.style.opacity = '0'; setTimeout(function() { fila.remove(); }, 500); }
+  mostrarToast('✓ Expediente aprobado · EXP-DDC-2026-0831', 'success');
+}
+
+function confirmarRechazar() {
+  var motivo = document.getElementById('reMotivo').value;
+  if (motivo.length < 20) { document.getElementById('reError').textContent = 'El motivo debe tener al menos 20 caracteres.'; return; }
+  cerrarModal('modalRechazar');
+  var fila = document.getElementById(window.expIdActual);
+  if (fila) { fila.style.transition = 'opacity 0.5s'; fila.style.opacity = '0'; setTimeout(function() { fila.remove(); }, 500); }
+  mostrarToast('✓ Expediente devuelto para correcciones', 'warning');
+}
+
+function mostrarToast(msg, tipo) {
+  var toast = document.createElement('div');
+  toast.className = 'toast toast-' + tipo;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(function() { toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 300); }, 3000);
+}
+
+// ROLE-BASED INIT
+document.addEventListener('DOMContentLoaded', function() {
+  var rol = localStorage.getItem('rol') || 'OFICIAL_KYC';
+  var titles = { 'OFICIAL_KYC': 'Panel de Revisiones DDC', 'OFICIAL_CUMPLIMIENTO': 'Panel de Aprobaciones', 'AUDITOR_INTERNO': 'Panel de Auditoría' };
+  document.getElementById('dashboardTitle').textContent = titles[rol] || 'Dashboard';
+
+  // Show correct KPIs
+  document.getElementById('kpiKYC').style.display = rol === 'OFICIAL_KYC' ? 'grid' : 'none';
+  document.getElementById('kpiCumplimiento').style.display = rol === 'OFICIAL_CUMPLIMIENTO' ? 'grid' : 'none';
+  document.getElementById('kpiAuditor').style.display = rol === 'AUDITOR_INTERNO' ? 'grid' : 'none';
+
+  // Show correct tabs, hide others
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.style.display = btn.getAttribute('data-rol') === rol ? 'inline-block' : 'none';
+  });
+
+  // Hide all tab contents
+  document.querySelectorAll('.tab-content').forEach(function(el) { el.style.display = 'none'; });
+
+  // Show first tab for this role
+  var firstTab = document.querySelector('.tab-btn[data-rol="' + rol + '"]');
+  if (firstTab) { firstTab.classList.add('active'); switchTab(firstTab.getAttribute('data-tab')); }
+
+  // Hide Nueva DDC buttons for non-KYC
+  if (rol !== 'OFICIAL_KYC') {
+    document.querySelectorAll('.btn-nueva-ddc').forEach(function(b) { b.style.display = 'none'; });
+  }
+});
+</script>
+
+{% endblock %}

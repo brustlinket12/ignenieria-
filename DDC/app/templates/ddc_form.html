@@ -1,0 +1,628 @@
+{% extends "base.html" %}
+{% block title %}Formulario DDC{% endblock %}
+{% block content %}
+
+<!-- ROLE GATE: only KYC can access the form -->
+<div id="roleGate" style="display:none">
+  <div class="step-card" style="text-align:center;padding:60px">
+    <div style="font-size:3rem;margin-bottom:16px">&#x1F6AB;</div>
+    <h2 style="margin-bottom:12px">No tiene permisos para crear revisiones DDC</h2>
+    <p style="color:var(--muted);margin-bottom:24px">Solo el Oficial KYC puede realizar esta acción.</p>
+    <a href="/dashboard" class="btn btn-primary">Volver al Dashboard</a>
+  </div>
+</div>
+<div id="formContent">
+<script>
+  (function() {
+    var rol = localStorage.getItem('rol');
+    if (rol && rol !== 'OFICIAL_KYC') {
+      document.getElementById('roleGate').style.display = 'block';
+      document.getElementById('formContent').style.display = 'none';
+    }
+  })();
+</script>
+
+<!-- FORM HEADER -->
+<div class="form-page-header">
+  <div class="form-cliente-info">
+    <span class="form-icon">🛡</span>
+    <div>
+      <h2>Debida Diligencia Continua</h2>
+      <p class="form-cliente-name">Cliente: Inversiones Marítimas del Pacífico, S.A.  |  RUC-655-814-102839-2023</p>
+    </div>
+  </div>
+</div>
+
+<!-- STEP INDICATOR -->
+<div class="step-indicator">
+  <div class="step-item step-completed" data-step="1">
+    <div class="step-circle">✓</div>
+    <span class="step-label">Identificación</span>
+  </div>
+  <div class="step-line step-line-filled"></div>
+  <div class="step-item step-active" data-step="2">
+    <div class="step-circle">2</div>
+    <span class="step-label">Evaluación de Riesgo</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step-item" data-step="3">
+    <div class="step-circle">3</div>
+    <span class="step-label">Documentación</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step-item" data-step="4">
+    <div class="step-circle">4</div>
+    <span class="step-label">Revisión y Envío</span>
+  </div>
+</div>
+
+<!-- SANCTIONS OVERLAY (shown when blocked) -->
+{% if bloqueado %}
+<div class="sanciones-overlay">
+  <div class="sanciones-card">
+    <div class="sanciones-icon">⛔</div>
+    <h2>COINCIDENCIA EN LISTA DE SANCIONES</h2>
+    <p>El cliente figura en la lista OFAC con score 92%.</p>
+    <p>El formulario ha sido bloqueado automáticamente.</p>
+    <div class="sanciones-meta">
+      <p>Fuente: OFAC SDN List · Detectado: 03/05/2026 14:14</p>
+      <p>Solo el Oficial de Cumplimiento puede desbloquear este expediente tras registrar la justificación.</p>
+    </div>
+    <a href="/dashboard" class="btn btn-primary">Volver al Dashboard</a>
+  </div>
+</div>
+{% endif %}
+
+<!-- ========== STEP 1: IDENTIFICACIÓN ========== -->
+<div class="form-step" id="step1" style="display:block">
+  <div class="step-card">
+    <div class="form-grid-2col">
+      <div class="form-group">
+        <label>ID Interno</label>
+        <input type="text" value="3fa85f64-5717-4562-b3fc-2c963f66afa6" class="form-input form-input-readonly" readonly>
+      </div>
+      <div class="form-group">
+        <label>Tipo de Identificación</label>
+        <input type="text" value="RUC" class="form-input form-input-readonly" readonly>
+      </div>
+      <div class="form-group">
+        <label>Nombre / Razón Social</label>
+        <input type="text" value="Inversiones Marítimas del Pacífico, S.A." class="form-input form-input-readonly" readonly>
+      </div>
+      <div class="form-group">
+        <label>Número de Identificación</label>
+        <input type="text" value="RUC-655-814-102839-2023" class="form-input form-input-readonly" readonly>
+      </div>
+      <div class="form-group">
+        <label>Tipo de Cliente</label>
+        <input type="text" value="PERSONA JURÍDICA" class="form-input form-input-readonly" readonly>
+      </div>
+      <div class="form-group">
+        <label>Fecha de Vinculación</label>
+        <input type="date" value="2019-03-15" class="form-input form-input-readonly" readonly>
+      </div>
+    </div>
+    <div class="alert-banner alert-info">
+      ℹ Los datos de identificación se cargan del expediente existente. Para modificarlos contacte al administrador del sistema.
+    </div>
+  </div>
+</div>
+
+<!-- ========== STEP 2: EVALUACIÓN DE RIESGO ========== -->
+<div class="form-step" id="step2" style="display:none">
+  <div class="step-card">
+    <div class="form-grid-2col">
+      <!-- Left column -->
+      <div class="form-col">
+        <div class="form-group">
+          <label for="sector">Sector Económico (CIIU)</label>
+          <select id="sector" class="form-input" onchange="actualizarRiesgo()">
+            <option value="H5012">H5012 – Transporte Marítimo</option>
+            <option value="K6419">K6419 – Banca</option>
+            <option value="J6110">J6110 – Telecomunicaciones</option>
+            <option value="G4711">G4711 – Comercio al por menor</option>
+            <option value="V6420">V6420 – Activos Virtuales / Cripto</option>
+            <option value="I5510">I5510 – Hotelería y Turismo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="jurisdiccion">Jurisdicción Principal</label>
+          <select id="jurisdiccion" class="form-input" onchange="actualizarRiesgo()">
+            <option value="PA">PA – Panamá</option>
+            <option value="US">US – Estados Unidos</option>
+            <option value="KY">KY – Islas Caimán</option>
+            <option value="VG">VG – Islas Vírgenes Británicas</option>
+            <option value="CH">CH – Suiza</option>
+            <option value="CN">CN – China</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>¿Es Persona Políticamente Expuesta?</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="esPep" onchange="actualizarRiesgo()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span id="pepLabel" class="toggle-label">No</span>
+        </div>
+        <div class="form-group">
+          <label for="origenFondos">Origen de Fondos</label>
+          <select id="origenFondos" class="form-input">
+            <option>Actividades Comerciales</option>
+            <option>Herencia</option>
+            <option>Inversiones financieras</option>
+            <option>Salario / Honorarios</option>
+            <option>Otro</option>
+          </select>
+        </div>
+      </div>
+      <!-- Right column -->
+      <div class="form-col">
+        <div class="form-group">
+          <label for="volumen">Volumen Transaccional Mensual (USD)</label>
+          <input type="text" id="volumen" value="850,000.00" class="form-input" onblur="validarVolumen()" onkeyup="actualizarRiesgo()">
+          <div class="field-error" id="volumenError"></div>
+        </div>
+        <div class="form-group">
+          <label>¿Figura en Listas de Sanción?</label>
+          <span class="risk-badge risk-bajo" id="sancionBadge">✓ No figura</span>
+        </div>
+        <div class="form-group">
+          <label for="fechaRevision">Fecha Última Revisión DDC</label>
+          <input type="date" id="fechaRevision" value="2024-04-10" class="form-input" onblur="validarFechaRevision()">
+          <div class="field-error" id="fechaError"></div>
+        </div>
+        <div class="form-group">
+          <label for="observaciones">Observaciones del Oficial</label>
+          <textarea id="observaciones" class="form-input form-textarea" placeholder="Describa cambios relevantes en el perfil del cliente..." maxlength="2000" onblur="validarObservaciones()" onkeyup="contarCaracteres()"></textarea>
+          <div class="char-counter"><span id="charCount">0</span> / 2000</div>
+          <div class="field-error" id="obsError"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RISK GAUGE -->
+    <div class="risk-gauge-container">
+      <h3>NIVEL DE RIESGO CALCULADO</h3>
+      <div class="risk-gauge-bar">
+        <div class="risk-gauge-track">
+          <div class="risk-gauge-fill" id="riskGaugeFill" style="width:0%"></div>
+        </div>
+        <div class="risk-gauge-markers">
+          <span>BAJO</span>
+          <span class="marker-20">|</span>
+          <span>MEDIO</span>
+          <span class="marker-50">|</span>
+          <span>ALTO</span>
+          <span class="marker-75">|</span>
+          <span>MUY ALTO</span>
+        </div>
+      </div>
+      <div class="risk-gauge-result" id="riskResult">
+        <span class="risk-badge risk-bajo" id="riskLevelBadge">BAJO</span>
+        <span class="risk-score" id="riskScore">Score: 0</span>
+      </div>
+      <div class="risk-factors" id="riskFactors">
+        Factores: —
+      </div>
+    </div>
+
+    <!-- Warning alert -->
+    <div class="alert-banner alert-warning" id="vencimientoAlert" style="display:none">
+      ⚠ La revisión DDC está próxima a vencer. Verifique la documentación del cliente.
+    </div>
+  </div>
+</div>
+
+<!-- ========== STEP 3: DOCUMENTACIÓN ========== -->
+<div class="form-step" id="step3" style="display:none">
+  <div class="step-card">
+    <h3>Documentos requeridos para este expediente</h3>
+    <div class="doc-checklist">
+      <div class="doc-item doc-cargado">
+        <span class="doc-check">✓</span>
+        <span class="doc-name">Documento de Identidad / Escritura de constitución</span>
+        <span class="risk-badge risk-bajo">cargado</span>
+      </div>
+      <div class="doc-item doc-pendiente">
+        <span class="doc-check">✗</span>
+        <span class="doc-name">Estado Financiero reciente (requerido: Riesgo MEDIO)</span>
+        <span class="risk-badge risk-alto">pendiente</span>
+      </div>
+      <div class="doc-item">
+        <span class="doc-check">○</span>
+        <span class="doc-name">Declaración de Origen de Fondos</span>
+        <span class="doc-opcional">opcional</span>
+      </div>
+      <div class="doc-item">
+        <span class="doc-check">○</span>
+        <span class="doc-name">Poder Notarial</span>
+        <span class="doc-opcional">opcional</span>
+      </div>
+    </div>
+
+    <!-- Upload zone -->
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-content">
+        <div class="upload-icon">📎</div>
+        <p>Arrastre archivos aquí o haga clic para seleccionar</p>
+        <p class="upload-hint">Formatos: PDF, JPEG, PNG · Máximo 10 MB</p>
+        <p class="upload-encrypt">🔒 AES-256 · Los archivos se cifrarán al guardar</p>
+      </div>
+      <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="simularCarga(event)">
+    </div>
+
+    <!-- Uploaded files -->
+    <div class="file-list">
+      <div class="file-item">
+        <span class="file-icon">📄</span>
+        <span class="file-name">cert_registro_2025.pdf</span>
+        <span class="file-size">2.3 MB</span>
+        <span class="risk-badge risk-bajo file-encrypt">🔒 Cifrado</span>
+        <button class="file-remove">✕</button>
+      </div>
+      <div class="file-item file-pending">
+        <span class="file-icon">📄</span>
+        <span class="file-name">estado_financiero.pdf</span>
+        <span class="file-size">— pendiente de carga</span>
+        <span class="risk-badge risk-alto">✕ pendiente</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== STEP 4: REVISIÓN Y ENVÍO ========== -->
+<div class="form-step" id="step4" style="display:none">
+  <div class="step-card">
+    <!-- Summary accordion -->
+    <div class="summary-section">
+      <div class="summary-header" onclick="toggleSummary(this)">
+        <span>▼ Identificación</span>
+      </div>
+      <div class="summary-body">
+        <div class="summary-grid">
+          <div><strong>Nombre:</strong> Inversiones Marítimas del Pacífico, S.A.</div>
+          <div><strong>RUC:</strong> RUC-655-814-102839-2023</div>
+          <div><strong>Tipo:</strong> Jurídica</div>
+          <div><strong>Vinculación:</strong> 15/03/2019</div>
+        </div>
+      </div>
+    </div>
+    <div class="summary-section">
+      <div class="summary-header" onclick="toggleSummary(this)">
+        <span>▼ Evaluación de Riesgo</span>
+      </div>
+      <div class="summary-body">
+        <div class="summary-grid">
+          <div><strong>Sector:</strong> H5012 – Transporte Marítimo</div>
+          <div><strong>Jurisdicción:</strong> PA</div>
+          <div><strong>PEP:</strong> No</div>
+          <div><strong>Origen fondos:</strong> Actividades Comerciales</div>
+          <div><strong>Volumen mensual:</strong> USD 850,000.00</div>
+          <div><strong>Nivel calculado:</strong> <span class="risk-badge risk-medio">MEDIO</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="summary-section">
+      <div class="summary-header" onclick="toggleSummary(this)">
+        <span>▼ Documentación</span>
+      </div>
+      <div class="summary-body">
+        <p>✓ cert_registro_2025.pdf</p>
+        <p>✗ estado_financiero.pdf (pendiente)</p>
+      </div>
+    </div>
+
+    <!-- Digital signature -->
+    <div class="signature-block" id="signatureBlock">
+      <h3>✍ Firma Digital del Oficial</h3>
+      <div class="signature-form" id="signatureForm">
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label>PIN de confirmación</label>
+            <input type="password" id="pinInput" class="form-input" maxlength="4" placeholder="****">
+          </div>
+          <button class="btn btn-primary" onclick="firmarDocumento()" style="margin-top:22px">Firmar</button>
+        </div>
+        <p class="form-hint">(cualquier PIN de 4 dígitos es válido)</p>
+      </div>
+      <div class="signature-confirm" id="signatureConfirm" style="display:none">
+        <div class="signature-success">✓ Firmado digitalmente</div>
+        <div class="signature-hash mono">Hash: a3f9c2d1e5b7f9c3a1d4e6b8f0c2d4e6f8a1b2c3d4e5f6a7b8c9d0e1f2a3b4</div>
+        <div class="signature-meta">Oficial: María Rodríguez · 2026-05-03T14:14:32Z</div>
+        <div class="signature-rfc">🔏 RFC 3161</div>
+      </div>
+    </div>
+
+    <!-- Conditional approval banner -->
+    <div class="alert-banner alert-info" id="approvalBanner">
+      🔵 Este expediente será enviado para revisión del Oficial de Cumplimiento antes de cerrarse definitivamente.
+    </div>
+
+    <!-- Submit buttons -->
+    <div class="form-submit-row">
+      <button class="btn btn-primary btn-lg" onclick="enviarExpediente()">Enviar y Cerrar Expediente</button>
+    </div>
+  </div>
+</div>
+</div><!-- end formContent -->
+
+<!-- FORM FOOTER -->
+<div class="form-footer">
+  <button class="btn btn-outline" id="btnAnterior" onclick="pasoAnterior()" style="display:none">← Paso Anterior</button>
+  <div class="form-footer-center">
+    <span class="autosave-indicator" id="autoSaveIndicator">💾 Guardado automático cada 2 min</span>
+    <span class="footer-tls">🔒 TLS 1.3</span>
+  </div>
+  <div class="form-footer-right">
+    <button class="btn btn-outline" onclick="guardarBorrador()">💾 Guardar Borrador</button>
+    <button class="btn btn-primary" id="btnContinuar" onclick="siguientePaso()">Continuar →</button>
+  </div>
+</div>
+
+<script>
+// STEP NAVIGATION
+let pasoActual = 1;
+
+function mostrarPaso(paso) {
+  document.querySelectorAll('.form-step').forEach(el => el.style.display = 'none');
+  document.getElementById('step' + paso).style.display = 'block';
+  document.getElementById('btnAnterior').style.display = paso === 1 ? 'none' : 'inline-flex';
+  const btnContinuar = document.getElementById('btnContinuar');
+  if (paso === 4) {
+    btnContinuar.style.display = 'none';
+  } else {
+    btnContinuar.style.display = 'inline-flex';
+    btnContinuar.textContent = paso === 3 ? 'Revisar y Firmar →' : 'Continuar →';
+  }
+  // Update steps
+  document.querySelectorAll('.step-item').forEach((item, idx) => {
+    const num = idx + 1;
+    item.classList.remove('step-active', 'step-completed');
+    if (num < paso) item.classList.add('step-completed');
+    else if (num === paso) item.classList.add('step-active');
+  });
+  document.querySelectorAll('.step-line').forEach((line, idx) => {
+    line.classList.toggle('step-line-filled', idx < paso - 1);
+  });
+  pasoActual = paso;
+}
+
+function siguientePaso() {
+  if (pasoActual === 1) {
+    // Show spinner, then advance
+    const overlay = document.createElement('div');
+    overlay.className = 'spinner-overlay';
+    overlay.innerHTML = '<div class="spinner-card"><div class="spinner"></div><p>⟳ Consultando listas OFAC · ONU · UE...</p></div>';
+    document.body.appendChild(overlay);
+    setTimeout(() => {
+      overlay.remove();
+      {% if bloqueado %}
+      // Already showing block overlay
+      return;
+      {% else %}
+      mostrarPaso(2);
+      actualizarRiesgo();
+      {% endif %}
+    }, 1500);
+  } else if (pasoActual === 2) {
+    // Validate step 2
+    let hasError = false;
+    if (document.getElementById('volumenError').textContent) hasError = true;
+    if (document.getElementById('fechaError').textContent) hasError = true;
+    if (document.getElementById('obsError').textContent) hasError = true;
+    if (!hasError) {
+      mostrarPaso(3);
+    } else {
+      document.querySelector('.form-step#step2 .field-error:first-child')?.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  } else if (pasoActual === 3) {
+    mostrarPaso(4);
+  }
+}
+
+function pasoAnterior() {
+  if (pasoActual > 1) mostrarPaso(pasoActual - 1);
+}
+
+// RISK CALCULATOR
+function calcularRiesgo() {
+  const sector = document.getElementById('sector').value;
+  const jurisdiccion = document.getElementById('jurisdiccion').value;
+  const esPep = document.getElementById('esPep').checked;
+  const volumen = parseFloat(document.getElementById('volumen').value.replace(/,/g, '')) || 0;
+  let score = 0;
+  if (sector === 'V6420' || sector === 'KY') score += 40;
+  if (sector === 'K6419') score += 15;
+  if (jurisdiccion === 'KY' || jurisdiccion === 'VG') score += 30;
+  if (esPep) score += 35;
+  if (volumen > 500000) score += 20;
+  else if (volumen > 100000) score += 10;
+  let nivel = 'BAJO';
+  if (score >= 75) nivel = 'MUY_ALTO';
+  else if (score >= 50) nivel = 'ALTO';
+  else if (score >= 20) nivel = 'MEDIO';
+  return { nivel, score };
+}
+
+function actualizarRiesgo() {
+  const { nivel, score } = calcularRiesgo();
+  const fill = document.getElementById('riskGaugeFill');
+  const badge = document.getElementById('riskLevelBadge');
+  const scoreEl = document.getElementById('riskScore');
+  fill.style.width = Math.min(score, 100) + '%';
+  fill.className = 'risk-gauge-fill risk-fill-' + nivel;
+  badge.textContent = nivel;
+  badge.className = 'risk-badge risk-' + nivel.toLowerCase().replace(' ', '-');
+  scoreEl.textContent = 'Score: ' + score;
+  // PEP label
+  document.getElementById('pepLabel').textContent = document.getElementById('esPep').checked ? 'Sí' : 'No';
+  // Factors
+  let factores = [];
+  const sector = document.getElementById('sector');
+  const jurisdiccion = document.getElementById('jurisdiccion');
+  const esPep = document.getElementById('esPep').checked;
+  const vol = parseFloat(document.getElementById('volumen').value.replace(/,/g, '')) || 0;
+  factores.push('Sector: ' + sector.options[sector.selectedIndex].text.split(' – ')[1] + ' (+' + (sector.value === 'V6420' ? 40 : sector.value === 'K6419' ? 15 : 0) + ')');
+  factores.push('Jurisdicción: ' + jurisdiccion.options[jurisdiccion.selectedIndex].text.split(' – ')[1] + ' (+' + (jurisdiccion.value === 'KY' || jurisdiccion.value === 'VG' ? 30 : 0) + ')');
+  factores.push('PEP: ' + (esPep ? 'Sí (+35)' : 'No (0)'));
+  factores.push('Volumen: ' + (vol > 500000 ? '+$500k (+20)' : vol > 100000 ? '+$100k (+10)' : '<$100k (0)'));
+  document.getElementById('riskFactors').textContent = 'Factores: ' + factores.join(' · ');
+
+  // Check if approval needed (for step 4 banner)
+  if (nivel === 'ALTO' || nivel === 'MUY_ALTO' || esPep) {
+    document.getElementById('approvalBanner').style.display = 'block';
+  }
+}
+
+// VALIDATIONS
+function validarVolumen() {
+  const input = document.getElementById('volumen');
+  const error = document.getElementById('volumenError');
+  const val = input.value.replace(/,/g, '');
+  if (isNaN(val) || val < 0) {
+    error.textContent = 'Ingrese un monto válido en dólares.';
+    input.classList.add('input-error');
+    input.classList.remove('input-valid');
+  } else {
+    error.textContent = '';
+    input.classList.remove('input-error');
+    input.classList.add('input-valid');
+  }
+}
+
+function validarFechaRevision() {
+  const input = document.getElementById('fechaRevision');
+  const error = document.getElementById('fechaError');
+  const hoy = new Date().toISOString().split('T')[0];
+  if (input.value > hoy) {
+    error.textContent = 'La fecha de revisión no puede ser futura.';
+    input.classList.add('input-error');
+    input.classList.remove('input-valid');
+  } else {
+    error.textContent = '';
+    input.classList.remove('input-error');
+    input.classList.add('input-valid');
+    // Check if > 11 months ago
+    const f = new Date(input.value);
+    const now = new Date();
+    const diffMonths = (now - f) / (30 * 24 * 60 * 60 * 1000);
+    document.getElementById('vencimientoAlert').style.display = diffMonths > 11 ? 'block' : 'none';
+  }
+}
+
+function validarObservaciones() {
+  const input = document.getElementById('observaciones');
+  const error = document.getElementById('obsError');
+  if (input.value.includes('<') || input.value.includes('>')) {
+    error.textContent = 'No se permiten etiquetas HTML ni scripts.';
+    input.classList.add('input-error');
+    input.classList.remove('input-valid');
+  } else {
+    error.textContent = '';
+    input.classList.remove('input-error');
+    input.classList.add('input-valid');
+  }
+}
+
+function contarCaracteres() {
+  document.getElementById('charCount').textContent = document.getElementById('observaciones').value.length;
+}
+
+// FILE UPLOAD
+const uploadZone = document.getElementById('uploadZone');
+if (uploadZone) {
+  uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+  uploadZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    simularCarga({ target: { files: e.dataTransfer.files } });
+  });
+  uploadZone.addEventListener('click', () => document.getElementById('fileInput').click());
+}
+
+function simularCarga(event) {
+  const files = event.target.files;
+  if (!files.length) return;
+  const file = files[0];
+  const validTypes = ['.pdf', '.jpg', '.jpeg', '.png'];
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  if (!validTypes.includes(ext)) {
+    alert('⚠ Solo PDF, JPEG o PNG de hasta 10 MB.');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    alert('⚠ Solo PDF, JPEG o PNG de hasta 10 MB.');
+    return;
+  }
+  // Simulate upload
+  const progressDiv = document.createElement('div');
+  progressDiv.className = 'upload-progress';
+  progressDiv.innerHTML = '<div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div><span>Subiendo...</span>';
+  uploadZone.parentNode.insertBefore(progressDiv, uploadZone.nextSibling);
+  let p = 0;
+  const interval = setInterval(() => {
+    p += 10;
+    progressDiv.querySelector('.progress-fill').style.width = p + '%';
+    if (p >= 100) {
+      clearInterval(interval);
+      progressDiv.remove();
+      const fileList = document.querySelector('.file-list');
+      const item = document.createElement('div');
+      item.className = 'file-item';
+      item.innerHTML = '<span class="file-icon">📄</span><span class="file-name">' + file.name + '</span><span class="file-size">' + (file.size / 1024 / 1024).toFixed(1) + ' MB</span><span class="risk-badge risk-bajo file-encrypt">🔒 Cifrado</span><button class="file-remove">✕</button>';
+      // Remove pending item if it's estado_financiero
+      const pending = fileList.querySelector('.file-pending');
+      if (pending && file.name.includes('financiero')) pending.remove();
+      fileList.appendChild(item);
+    }
+  }, 100);
+}
+
+// SIGNATURE
+function firmarDocumento() {
+  const pin = document.getElementById('pinInput').value;
+  if (pin.length !== 4) {
+    alert('Ingrese un PIN de 4 dígitos.');
+    return;
+  }
+  document.getElementById('signatureForm').style.display = 'none';
+  document.getElementById('signatureConfirm').style.display = 'block';
+}
+
+// SUBMIT
+function enviarExpediente() {
+  const overlay = document.createElement('div');
+  overlay.className = 'spinner-overlay';
+  overlay.innerHTML = '<div class="spinner-card"><div class="spinner"></div><p>⟳ Procesando expediente...</p></div>';
+  document.body.appendChild(overlay);
+  setTimeout(() => {
+    window.location.href = '/ddc/confirmacion';
+  }, 1500);
+}
+
+// AUTO-SAVE (cosmetic)
+let autosaveTimer = 0;
+setInterval(() => {
+  const indicator = document.getElementById('autoSaveIndicator');
+  if (indicator) {
+    indicator.textContent = '⟳ Guardando borrador...';
+    setTimeout(() => {
+      indicator.textContent = '✓ Borrador guardado · hace unos segundos';
+    }, 1000);
+  }
+}, 120000);
+
+// SUMMARY TOGGLE
+function toggleSummary(header) {
+  const body = header.nextElementSibling;
+  body.style.display = body.style.display === 'none' ? 'block' : 'none';
+  header.querySelector('span').textContent = body.style.display === 'none' ? '▶' : '▼' + header.querySelector('span').textContent.slice(1);
+}
+
+// Init
+mostrarPaso(1);
+actualizarRiesgo();
+</script>
+
+{% endblock %}

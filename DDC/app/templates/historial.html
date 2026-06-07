@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Historial de Monitoreo{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Historial de Monitoreo</h1>
+  <a href="/ddc/formulario/{{ cliente_id }}" class="btn btn-primary" id="nuevaRevisionBtn">+ Nueva Revisión DDC</a>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var rol = localStorage.getItem('rol');
+    if (rol && rol !== 'OFICIAL_KYC') {
+      var btn = document.getElementById('nuevaRevisionBtn');
+      if (btn) btn.style.display = 'none';
+    }
+  });
+</script>
+
+<!-- Client header -->
+<div class="cliente-header-card">
+  {% set nombres = {'c-001': 'Inversiones Marítimas del Pacífico, S.A.', 'c-002': 'Carlos Méndez Herrera', 'c-003': 'Ricardo Fernández Aguirre', 'c-004': 'Logística Global Panama Corp.', 'c-005': 'Ana Torres Villarreal', 'c-006': 'Cripto Assets International Inc.', 'c-007': 'Mossack & Asociados, S.A.', 'c-008': 'Transportes del Caribe, S.A.'} %}
+  {% set docs = {'c-001': 'RUC-655-814-102839-2023 · Jurídica', 'c-002': '8-234-5678 · Natural', 'c-003': '3-118-2045 · PEP', 'c-004': 'RUC-123-456-789012-2021 · Jurídica', 'c-005': '4-201-3311 · Natural', 'c-006': 'RUC-890-123-456789-2022 · Jurídica', 'c-007': 'RUC-001-002-000001-2010 · Jurídica', 'c-008': 'RUC-321-654-987654-2019 · Jurídica'} %}
+  {% set riesgos = {'c-001': 'MEDIO', 'c-002': 'BAJO', 'c-003': 'MUY ALTO', 'c-004': 'ALTO', 'c-005': 'BAJO', 'c-006': 'MUY ALTO', 'c-007': 'MUY ALTO', 'c-008': 'MEDIO'} %}
+  {% set estados = {'c-001': 'DDC VENCIDA', 'c-002': 'VIGENTE', 'c-003': 'DDC VENCIDA', 'c-004': 'PRÓX. VENCER', 'c-005': 'VIGENTE', 'c-006': 'PEND. APROB.', 'c-007': 'BLOQUEADO', 'c-008': 'VIGENTE'} %}
+  <div class="cliente-info">
+    <h2>{{ nombres[cliente_id] }}</h2>
+    <p>{{ docs[cliente_id] }}</p>
+  </div>
+  <div class="cliente-badges">
+    <span class="risk-badge risk-{{ {'BAJO':'bajo','MEDIO':'medio','ALTO':'alto','MUY ALTO':'muy-alto','MUY_ALTO':'muy-alto'}[riesgos[cliente_id]] }}">{{ riesgos[cliente_id] }}</span>
+    <span class="status-badge">{{ estados[cliente_id] }}</span>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div class="timeline">
+  <!-- Entry 1 -->
+  <div class="timeline-entry">
+    <div class="timeline-dot"></div>
+    <div class="timeline-content">
+      <div class="timeline-date">10/04/2024 — Revisión anual</div>
+      <div class="timeline-detail">
+        <span class="risk-badge risk-medio">MEDIO</span>
+        <span class="timeline-arrow">→</span>
+        <span class="risk-badge risk-medio">MEDIO ALTO</span>
+        <span class="timeline-change up">↑ Cambio detectado: Sí</span>
+      </div>
+      <div class="timeline-meta">Motivo: Incremento 35% en volumen transaccional</div>
+      <div class="timeline-meta">Acciones: Solicitud de documentación adicional</div>
+      <div class="timeline-meta">Oficial: María Rodríguez (usr-00391)</div>
+      <div class="timeline-footer">
+        <span class="status-badge status-vigente">✓ Aprobado</span>
+        <span class="timeline-hash mono">Hash: a3f9c2d1e5b7...</span>
+        <a href="/detalle/c-001" class="btn-sm">Ver detalle</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Entry 2 -->
+  <div class="timeline-entry">
+    <div class="timeline-dot"></div>
+    <div class="timeline-content">
+      <div class="timeline-date">10/04/2023 — Revisión anual</div>
+      <div class="timeline-detail">
+        <span class="risk-badge risk-medio">MEDIO</span>
+        <span class="timeline-arrow">→</span>
+        <span class="risk-badge risk-medio">MEDIO</span>
+        <span class="timeline-change no">Cambio detectado: No</span>
+      </div>
+      <div class="timeline-meta">Motivo: Revisión rutinaria. Sin cambios significativos.</div>
+      <div class="timeline-meta">Oficial: José Ávila (usr-00287)</div>
+      <div class="timeline-footer">
+        <span class="status-badge status-vigente">✓ Aprobado</span>
+        <span class="timeline-hash mono">Hash: b1c2d3e4f5a6...</span>
+        <a href="/detalle/c-001" class="btn-sm">Ver detalle</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

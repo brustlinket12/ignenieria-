@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Detalle del Expediente{% endblock %}
+{% block content %}
+
+{% set nombres = {'c-001': 'Inversiones Marítimas del Pacífico, S.A.', 'c-002': 'Carlos Méndez Herrera', 'c-003': 'Ricardo Fernández Aguirre', 'c-004': 'Logística Global Panama Corp.', 'c-005': 'Ana Torres Villarreal', 'c-006': 'Cripto Assets International Inc.', 'c-007': 'Mossack & Asociados, S.A.', 'c-008': 'Transportes del Caribe, S.A.'} %}
+{% set docs = {'c-001': 'RUC-655-814-102839-2023 · Jurídica', 'c-002': '8-234-5678 · Natural', 'c-003': '3-118-2045 · PEP', 'c-004': 'RUC-123-456-789012-2021 · Jurídica', 'c-005': '4-201-3311 · Natural', 'c-006': 'RUC-890-123-456789-2022 · Jurídica', 'c-007': 'RUC-001-002-000001-2010 · Jurídica', 'c-008': 'RUC-321-654-987654-2019 · Jurídica'} %}
+{% set riesgos = {'c-001': 'MEDIO', 'c-002': 'BAJO', 'c-003': 'MUY ALTO', 'c-004': 'ALTO', 'c-005': 'BAJO', 'c-006': 'MUY ALTO', 'c-007': 'MUY ALTO', 'c-008': 'MEDIO'} %}
+{% set estados = {'c-001': 'DDC VENCIDA', 'c-002': 'VIGENTE', 'c-003': 'DDC VENCIDA', 'c-004': 'PRÓX. VENCER', 'c-005': 'VIGENTE', 'c-006': 'PEND. APROB.', 'c-007': 'BLOQUEADO', 'c-008': 'VIGENTE'} %}
+
+<div class="page-header">
+  <h1>Detalle del Expediente</h1>
+  <a href="/historial/{{ cliente_id }}" class="btn btn-outline">← Volver al Historial</a>
+</div>
+
+<!-- Client header -->
+<div class="cliente-header-card">
+  <div class="cliente-info">
+    <h2>{{ nombres[cliente_id] }}</h2>
+    <p>{{ docs[cliente_id] }}</p>
+  </div>
+  <div class="cliente-badges">
+    <span class="risk-badge risk-{{ {'BAJO':'bajo','MEDIO':'medio','ALTO':'alto','MUY ALTO':'muy-alto','MUY_ALTO':'muy-alto'}[riesgos[cliente_id]] }}">{{ riesgos[cliente_id] }}</span>
+    <span class="status-badge">{{ estados[cliente_id] }}</span>
+  </div>
+</div>
+
+<!-- Revisión más reciente -->
+<div class="detail-section">
+  <h3 class="detail-section-title">Última Revisión DDC — 10/04/2024</h3>
+
+  <div class="detail-grid">
+    <div class="detail-card">
+      <h4>Identificación del Cliente</h4>
+      <div class="detail-row"><span class="detail-label">Nombre:</span><span class="detail-value">{{ nombres[cliente_id] }}</span></div>
+      <div class="detail-row"><span class="detail-label">Documento:</span><span class="detail-value">{{ docs[cliente_id] }}</span></div>
+      <div class="detail-row"><span class="detail-label">Tipo de persona:</span><span class="detail-value">Jurídica</span></div>
+      <div class="detail-row"><span class="detail-label">Fecha de incorporación:</span><span class="detail-value">15/03/2010</span></div>
+      <div class="detail-row"><span class="detail-label">Actividad económica:</span><span class="detail-value">Servicios marítimos y logística portuaria</span></div>
+      <div class="detail-row"><span class="detail-label">País de constitución:</span><span class="detail-value">Panamá</span></div>
+      <div class="detail-row"><span class="detail-label">Representante legal:</span><span class="detail-value">Juan Pérez Mendoza</span></div>
+    </div>
+
+    <div class="detail-card">
+      <h4>Evaluación de Riesgo</h4>
+      <div class="detail-row"><span class="detail-label">Sector:</span><span class="detail-value">Marítimo / Logístico</span></div>
+      <div class="detail-row"><span class="detail-label">Jurisdicción:</span><span class="detail-value">Panamá</span></div>
+      <div class="detail-row"><span class="detail-label">PEP:</span><span class="detail-value">No</span></div>
+      <div class="detail-row"><span class="detail-label">Volumen transaccional:</span><span class="detail-value">$1,200,000 USD/año</span></div>
+      <div class="detail-row"><span class="detail-label">Puntaje de riesgo:</span><span class="detail-value"><span class="risk-badge risk-medio">MEDIO · 38 pts</span></span></div>
+      <div class="detail-row"><span class="detail-label">Factores de riesgo:</span><span class="detail-value">Incremento 35% en volumen transaccional, operaciones internacionales</span></div>
+    </div>
+  </div>
+
+  <div class="detail-grid">
+    <div class="detail-card">
+      <h4>Documentación Adjunta</h4>
+      <div class="detail-file"><span class="file-icon">📄</span> Escritura de constitución — <span class="file-status completo">Completo</span></div>
+      <div class="detail-file"><span class="file-icon">📄</span> Certificado de registro público — <span class="file-status completo">Completo</span></div>
+      <div class="detail-file"><span class="file-icon">📄</span> Copia de cédula del representante — <span class="file-status completo">Completo</span></div>
+      <div class="detail-file"><span class="file-icon">📄</span> Estados financieros auditados — <span class="file-status completo">Completo</span></div>
+      <div class="detail-file"><span class="file-icon">📄</span> Referencias bancarias — <span class="file-status completo">Completo</span></div>
+      <div class="detail-file"><span class="file-icon">📄</span> Estructura organizacional — <span class="file-status pendiente">Pendiente</span></div>
+    </div>
+
+    <div class="detail-card">
+      <h4>Revisión y Aprobación</h4>
+      <div class="detail-row"><span class="detail-label">Oficial KYC:</span><span class="detail-value">María Rodríguez (usr-00391)</span></div>
+      <div class="detail-row"><span class="detail-label">Comentarios:</span><span class="detail-value">Se detectó incremento en volumen transaccional. Se solicitaron estados financieros actualizados. Cliente cooperó y entregó documentación requerida dentro del plazo.</span></div>
+      <div class="detail-row"><span class="detail-label">Dictamen:</span><span class="detail-value"><span class="status-badge status-vigente">APROBADO</span></span></div>
+      <div class="detail-row"><span class="detail-label">Fecha de aprobación:</span><span class="detail-value">12/04/2024</span></div>
+      <div class="detail-row"><span class="detail-label">Próxima revisión:</span><span class="detail-value">10/04/2025 (12 meses)</span></div>
+      <div class="detail-row"><span class="detail-label">Hash:</span><span class="detail-value mono" style="font-size:0.75rem">a3f9c2d1e5b7f8a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Revisión anterior -->
+<div class="detail-section">
+  <h3 class="detail-section-title">Revisión Anterior — 10/04/2023</h3>
+
+  <div class="detail-grid">
+    <div class="detail-card">
+      <h4>Evaluación de Riesgo</h4>
+      <div class="detail-row"><span class="detail-label">Sector:</span><span class="detail-value">Marítimo / Logístico</span></div>
+      <div class="detail-row"><span class="detail-label">Jurisdicción:</span><span class="detail-value">Panamá</span></div>
+      <div class="detail-row"><span class="detail-label">PEP:</span><span class="detail-value">No</span></div>
+      <div class="detail-row"><span class="detail-label">Volumen transaccional:</span><span class="detail-value">$890,000 USD/año</span></div>
+      <div class="detail-row"><span class="detail-label">Puntaje de riesgo:</span><span class="detail-value"><span class="risk-badge risk-medio">MEDIO · 28 pts</span></span></div>
+      <div class="detail-row"><span class="detail-label">Variación:</span><span class="detail-value"><span class="timeline-change up">↑ +10 pts (+35% volumen)</span></span></div>
+    </div>
+
+    <div class="detail-card">
+      <h4>Revisión y Aprobación</h4>
+      <div class="detail-row"><span class="detail-label">Oficial KYC:</span><span class="detail-value">José Ávila (usr-00287)</span></div>
+      <div class="detail-row"><span class="detail-label">Comentarios:</span><span class="detail-value">Revisión rutinaria. Sin cambios significativos en perfil de riesgo. Documentación completa y actualizada.</span></div>
+      <div class="detail-row"><span class="detail-label">Dictamen:</span><span class="detail-value"><span class="status-badge status-vigente">APROBADO</span></span></div>
+      <div class="detail-row"><span class="detail-label">Hash:</span><span class="detail-value mono" style="font-size:0.75rem">b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="detail-actions">
+  <a href="/ddc/formulario/{{ cliente_id }}" class="btn btn-primary">+ Nueva Revisión DDC</a>
+  <a href="/historial/{{ cliente_id }}" class="btn btn-outline">← Volver al Historial</a>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var rol = localStorage.getItem('rol');
+    if (rol && rol !== 'OFICIAL_KYC') {
+      var btns = document.querySelectorAll('.detail-actions .btn-primary');
+      btns.forEach(function (b) { b.style.display = 'none'; });
+    }
+  });
+</script>
+{% endblock %}

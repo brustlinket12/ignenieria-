@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DDC · Verificación MFA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body class="login-body">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-icon">&#x1F510;</div>
+      <h1 class="login-title">Verificación en 2 pasos</h1>
+      <p class="login-subtitle">Ingrese el código enviado a su dispositivo</p>
+
+      <form action="/dashboard" method="get" class="login-form" onsubmit="return validarMFA()">
+        <div class="mfa-inputs">
+          <input type="text" maxlength="1" class="mfa-box" oninput="moverSiguiente(this, 0)" autofocus>
+          <input type="text" maxlength="1" class="mfa-box" oninput="moverSiguiente(this, 1)">
+          <input type="text" maxlength="1" class="mfa-box" oninput="moverSiguiente(this, 2)">
+          <input type="text" maxlength="1" class="mfa-box" oninput="moverSiguiente(this, 3)">
+          <input type="text" maxlength="1" class="mfa-box" oninput="moverSiguiente(this, 4)">
+          <input type="text" maxlength="1" class="mfa-box" oninput="moverSiguiente(this, 5)">
+        </div>
+
+        <div class="mfa-timer" id="mfaTimer">&#x23F1; Código válido por: <span id="timerSeconds">30</span>s</div>
+        <div class="mfa-error" id="mfaError" style="display:none" role="alert">Ingrese los 6 dígitos del código.</div>
+
+        <button type="submit" class="btn btn-primary btn-full">Verificar</button>
+      </form>
+
+      <div class="mfa-resend">
+        ¿No recibió el código? <a href="#">Reenviar</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function moverSiguiente(input, idx) {
+      const boxes = document.querySelectorAll('.mfa-box');
+      if (input.value && idx < 5) boxes[idx + 1].focus();
+      document.getElementById('mfaError').style.display = 'none';
+    }
+    function validarMFA() {
+      const boxes = document.querySelectorAll('.mfa-box');
+      let code = '';
+      boxes.forEach(b => code += b.value);
+      if (code.length !== 6) {
+        document.getElementById('mfaError').style.display = 'block';
+        return false;
+      }
+      return true;
+    }
+    let segundos = 30;
+    setInterval(() => {
+      segundos--;
+      document.getElementById('timerSeconds').textContent = Math.max(0, segundos);
+      if (segundos <= 0) segundos = 30;
+    }, 1000);
+  </script>
+</body>
+</html>
