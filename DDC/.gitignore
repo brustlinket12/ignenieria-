@@ -1,0 +1,17 @@
+*.sqlite
+*.sqlite3
+*.db
+instance/
+.env
+.env.local
+uploads/
+node_modules/
+dist/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+.vscode/
+.idea/
+*.log
