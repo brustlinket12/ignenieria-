@@ -281,3 +281,49 @@ Para verificar que el bypass por sanciones funciona:
 5. Logueate como `oficial@demo.com`
 6. Revis\u00e1 el expediente bloqueado
 7. Desbloquealo con justificaci\u00f3n de falso positivo
+# Evolución de Arquitectura: Del Informe de DDC a Producción (Motor de Riesgos)
+
+Este documento detalla la transición, las nuevas reglas de negocio y las optimizaciones aplicadas al sistema de **Debida Diligencia Continua (DDC)**. Su objetivo es servir de puente entre el planteamiento conceptual del informe y la especificación técnica de producción necesaria para el desarrollo de la API y el backend.
+
+---
+
+## 1. Componentes 100% Nuevos (Lo que se AGREGÓ)
+
+Estos elementos **no existían en absoluto** en el informe original y se introdujeron en esta etapa técnica para poder estructurar la base de datos y las condicionales del código:
+
+* **La Ecuación Matemática del Riesgo ($R = S + J + P + V + O + L$):** El informe mencionaba que el sistema evaluaba el riesgo de manera automática, pero no incluía ninguna fórmula. En producción se definieron tablas de datos indexadas con asignaciones de peso exactas (puntos del 5 al 25) para automatizar el cálculo en el backend.
+* **Umbrales Numéricos de Corte (Rangos de Riesgo):** Se crearon límites matemáticos cerrados para categorizar automáticamente el score resultante de la fórmula en variables limpias para el código, evitando caídas o excepciones:
+    * **Bajo:** 0 - 30 puntos
+    * **Medio:** 31 - 60 puntos
+    * **Alto:** 61 - 90 puntos
+    * **Muy Alto:** 91+ puntos
+      
+* **El Rol de "Auditor Interno":** El informe original solo contemplaba operativamente al Oficial KYC y al Oficial de Cumplimiento. Se agregó este tercer rol técnico con permisos exclusivos de solo lectura (`Read-Only`) orientado al control inmutable de trazas y logs de auditoría.
+
+---
+
+## 2. Optimizaciones de Arquitectura (Lo que se MEJORÓ)
+
+Estos componentes **ya estaban presentes o descritos en el informe**, pero su lógica presentaba conflictos regulatorios o vacíos operativos que fueron subsanados para su implementación real:
+
+* **Sincronización del Cortocircuito de Bloqueo (Caso de Uso CU-03):** * *En el Informe:* El CU-03 ya establecía correctamente que una coincidencia en listas de sanciones bloqueaba el Paso 1 del formulario.
+    * *Modificaciones:* Se resolvió un conflicto con la nueva fórmula matemática. Si el backend detecta un positivo confirmado (`L = COINCIDENCIA_CONFIRMADA`), se dispara un *short-circuit* (bypass) que deniega el negocio de inmediato, aborta el flujo y pasa el expediente a `RECHAZADO`, impidiendo que la fórmula sume puntos en un proceso que ya está legalmente muerto.
+* **Estructuración de la Matriz de Permisos (RBAC):**
+    * *En el Informe:* Los roles de Oficial KYC y Cumplimiento ya operaban en las pantallas y flujos descritos.
+    * *Modificaciones:* Se eliminaron las ambigüedades donde las funciones se mezclaban (como que el KYC aprobara casos de riesgo medio). Se estructuraron formalmente en una **Matriz de Control de Acceso Basado en Roles (RBAC)** en formato de tabla para validar tokens de usuario, dejando claro que KYC *crea/edita* y Cumplimiento es el único que *aprueba/rechaza*.
+* **Ciclo de Vida del Expediente (Máquina de Estados Finita):**
+    * *En el Informe:* Se usaban términos sueltos y desconectados como *"Verificación pendiente"* o *"Completado"*.
+    * *Modificaciones:* Se estandarizó el pipeline del backend en una máquina de estados limpia y rígida para controlar los flujos de las peticiones HTTP de la API:
+        $$\text{BORRADOR} \longrightarrow \text{EN\_REVISION} \longrightarrow \text{PENDIENTE\_APROBACION} \longrightarrow \begin{cases} \text{APROBADO} \\ \text{RECHAZADO} \end{cases}$$
+* **Estandarización de Clasificaciones (Eliminación de Estados Huérfanos):**
+    * *En el Informe:* El JSON de ejemplo provisto para el cliente real arrojaba un nivel de riesgo `"MEDIO_ALTO"`.
+    * *Modificaciones:* Se eliminó este término por completo, ya que no existe en la matriz regulatoria de Panamá ni en los condicionales (`if/else`) del backend. Todo se mapea estrictamente a los 4 niveles oficiales basados en los umbrales de la fórmula.
+
+---
+
+## 3. Resumen de Enfoque Final
+
+| Documento | Propósito en el Proyecto | Implementación Técnica |
+| :--- | :--- | :--- |
+| **Informe de DDC (PDF)** | Sustento Legal (Ley 23 de 2015), Diseño UX/UI (Campos y Layout) y Requerimientos Funcionales. | Guía para el Frontend, Validaciones de campos e interfaz de usuario. |
+| **Especificación del Motor (Word / MD)** | Reglas de Negocio Matemáticas, Control de Acceso (RBAC) y Estados del Servidor. | Planos de Arquitectura para el Backend, API Endpoints y Base de Datos (MongoDB). |
