@@ -141,8 +141,20 @@ export default function CaseFileForm() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleFinalSubmit = async () => {
     if (!caseFileId) return;
+
+    const isClientValid = await clientForm.trigger();
+    if (!isClientValid) {
+      setStep(1);
+      return;
+    }
+
+    const isRiskValid = await riskForm.trigger();
+    if (!isRiskValid) {
+      setStep(2);
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -554,7 +566,7 @@ export default function CaseFileForm() {
                 Volver
               </button>
               <button
-                onClick={handleSubmit}
+                onClick={handleFinalSubmit}
                 disabled={isSubmitting}
                 className="flex-1 bg-green-600 text-white py-2.5 rounded-md font-medium hover:bg-green-700 disabled:opacity-50"
               >

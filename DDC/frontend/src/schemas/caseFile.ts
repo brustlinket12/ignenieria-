@@ -99,7 +99,7 @@ export function getScoreFromValue(value: string, options: typeof SECTOR_OPTIONS)
   return option?.score || 0;
 }
 
-export function getLabelFromValue(value: string, options: typeof SECTOR_OPTIONS): string {
+export function getLabelFromValue(value: string, options: Array<{ value: string; label: string }>): string {
   const option = options.find(o => o.value === value);
   return option?.label || value;
 }

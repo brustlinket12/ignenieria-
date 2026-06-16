@@ -1,12 +1,12 @@
 # DDC — Debida Diligencia Continua
 
-> Sistema de gesti\u00f3n de expedientes para cumplimiento normativo AML/KYC bajo la Ley 23/2015 de Panam\u00e1.
+> Sistema de gestión de expedientes para cumplimiento normativo AML/KYC bajo la Ley 23/2015 de Panamá.
 
 ---
 
-## Stack Tecnol\u00f3gico
+## Stack Tecnológico
 
-| Capa | Tecnolog\u00eda |
+| Capa | Tecnología |
 |------|----------------|
 | **Backend** | Flask 3.0 + SQLAlchemy + SQLite |
 | **Frontend** | React 19 + TypeScript + Vite |
@@ -14,7 +14,7 @@
 | **Formularios** | React Hook Form + Zod |
 | **Routing** | React Router v7 |
 | **HTTP** | Axios |
-| **Serializaci\u00f3n** | Marshmallow |
+| **Serialización** | Marshmallow |
 | **Testing** | pytest |
 
 ---
@@ -23,29 +23,39 @@
 
 ```
 React SPA (Puerto 5173)
- \u2192 HTTP/JSON \u2192
+ → HTTP/JSON →
  Flask API (Puerto 5001)
-                          \u2192
-                    SQLAlchemy \u2192 SQLite
+                          →
+                    SQLAlchemy → SQLite
 ```
 
-**Regla fundamental**: el frontend solo muestra lo que el backend responde. El c\u00e1lculo de riesgo, bloqueo por sanciones y auditor\u00eda se ejecutan siempre en Flask.
+**Regla fundamental**: el frontend solo muestra lo que el backend responde. El cálculo de riesgo, la derivación por sanciones y auditoría se ejecutan siempre en Flask.
 
 ---
 
 ## Roles Del Sistema
 
-| Rol | Descripci\u00f3n | Permisos |
-|-----|-----------------|----------|
-| `ANALISTA` | Carga y preparaci\u00f3n de expedientes | Crear, editar, enviar a revisi\u00f3n |
-| `OFICIAL_CUMPLIMIENTO` | Control y decisi\u00f3n | Aprobar, rechazar, desbloquear falso positivo |
-| `ADMIN` | Administraci\u00f3n total | Todas las funcionalidades |
+| Rol | Función |
+|-----|---------|
+| `ANALISTA` | Crea expedientes, calcula riesgo, sube documentos, finaliza |
+| `OFICIAL_CUMPLIMIENTO` | Revisa expedientes `EN_REVISION`, aprueba, rechaza, pide corrección |
+| `OFICIAL_AUDITORIA` | Solo lectura, no modifica, no ve borradores ni alertas |
+
+**Filtros y visibilidad por rol:**
+
+| Rol | Estados visibles |
+|-----|------------------|
+| `ANALISTA` | `BORRADOR`, `EN_REVISION`, `APROBADO`, `RECHAZADO` |
+| `OFICIAL_CUMPLIMIENTO` | `EN_REVISION`, `REQUIERE_CORRECCION`, `APROBADO`, `RECHAZADO` |
+| `OFICIAL_AUDITORIA` | `EN_REVISION`, `APROBADO`, `RECHAZADO` |
+
+`OFICIAL_CUMPLIMIENTO` no ve `BORRADOR`. `OFICIAL_AUDITORIA` no ve `BORRADOR`, no ve `REQUIERE_CORRECCION` y no tiene sección de alertas.
 
 ---
 
 ## Modelo De Riesgo
 
-**F\u00f3rmula:**
+**Fórmula:**
 
 ```
 R = S + J + P + V + O + L
@@ -53,12 +63,12 @@ R = S + J + P + V + O + L
 
 | Variable | Factor |
 |----------|--------|
-| `S` | Sector econ\u00f3mico (0-30) |
-| `J` | Jurisdicci\u00f3n (0-20) |
-| `P` | PEP - Persona Expuesta Pol\u00edticamente (0-20) |
+| `S` | Sector económico (0-30) |
+| `J` | Jurisdicción (0-20) |
+| `P` | PEP - Persona Expuesta Políticamente (0-20) |
 | `V` | Volumen transaccional (0-20) |
 | `O` | Origen de fondos (0-10) |
-| `L` | Listas de sanciones (0 \u00f3 3) |
+| `L` | Listas de sanciones (0 ó 3) |
 
 **Rangos de riesgo:**
 
@@ -69,18 +79,29 @@ R = S + J + P + V + O + L
 | 61-90 | `ALTO` |
 | 91+ | `MUY_ALTO` |
 
-**Regla cr\u00edtica — Bypass de Bloqueo Inmediato:**
+**Flujo de aprobación según riesgo:**
 
-> Si `L = COINCIDENCIA_CONFIRMADA` (score = 3), el c\u00e1lculo se aborta, `total_score = null`, `risk_level = null`, y el expediente se bloquea autom\u00e1ticamente. Solo el Oficial de Cumplimiento puede desbloquearlo con justificaci\u00f3n.
+| Nivel | Puntaje | Resultado al finalizar |
+|-------|---------|------------------------|
+| `BAJO` | 0-30 | Auto-aprobado, sin revisión |
+| `MEDIO` | 31-60 | Pasa a `EN_REVISION` |
+| `ALTO` | 61-90 | Pasa a `EN_REVISION` con alerta a `OFICIAL_CUMPLIMIENTO` |
+| `MUY_ALTO` | 91+ | Pasa a `EN_REVISION` con alerta a `OFICIAL_CUMPLIMIENTO` |
+
+**Regla crítica — Sanciones Confirmadas:**
+
+> Si `L = COINCIDENCIA_CONFIRMADA` (score = 3), el expediente pasa a `EN_REVISION` con `blocked_by_sanctions = true` y alerta a `OFICIAL_CUMPLIMIENTO`.
+
+**Alertas:** `OFICIAL_CUMPLIMIENTO` recibe alertas solo para riesgo `ALTO`, `MUY_ALTO` o sanciones confirmadas. `OFICIAL_AUDITORIA` no tiene sección de alertas. `ANALISTA` recibe notificación cuando su expediente cambia de estado.
 
 ---
 
 ## Estados Del Expediente
 
 ```
-BORRADOR \u2192 EN_REVISION \u2192 APROBADO
-                          \u2192 RECHAZADO
-                          \u2192 BLOQUEADO_POR_SANCIONES \u2192 DESBLOQUEADO_FALSO_POSITIVO
+BORRADOR → EN_REVISION → APROBADO
+                         → RECHAZADO
+                         → REQUIERE_CORRECCION
 ```
 
 ---
@@ -143,31 +164,38 @@ pytest app/tests/ -v
 |-------|----------|-----|
 | `analista@demo.com` | `password123` | ANALISTA |
 | `oficial@demo.com` | `password123` | OFICIAL_CUMPLIMIENTO |
-| `admin@demo.com` | `password123` | ADMIN |
+| `auditoria@demo.com` | `password123` | OFICIAL_AUDITORIA |
 
 ---
 
 ## Endpoints API
 
-| M\u00e9todo | Endpoint | Descripci\u00f3n |
+| Método | Endpoint | Descripción |
 |-----------|----------|-----------------|
 | `GET` | `/api/health` | Health check |
 | `POST` | `/api/auth/login` | Login de usuario |
-| `POST` | `/api/auth/logout` | Cerrar sesi\u00f3n |
+| `POST` | `/api/auth/logout` | Cerrar sesión |
 | `GET` | `/api/me` | Usuario autenticado |
 | `GET` | `/api/case-files` | Listar expedientes |
 | `POST` | `/api/case-files` | Crear expediente |
 | `GET` | `/api/case-files/:id` | Ver expediente |
 | `PATCH` | `/api/case-files/:id` | Actualizar expediente |
-| `POST` | `/api/case-files/:id/submit` | Enviar a revisi\u00f3n |
+| `POST` | `/api/case-files/:id/submit` | Enviar a revisión |
 | `POST` | `/api/case-files/:id/risk-assessment` | Calcular riesgo + screening |
+| `GET` | `/api/case-files/:id/documents` | Listar documentos |
+| `POST` | `/api/case-files/:id/documents` | Subir documento real con `multipart/form-data` |
+| `DELETE` | `/api/case-files/:id/documents/:document_id` | Eliminar documento |
 | `POST` | `/api/case-files/:id/approve` | Aprobar expediente |
 | `POST` | `/api/case-files/:id/reject` | Rechazar expediente |
-| `POST` | `/api/case-files/:id/unblock` | Desbloquear falso positivo |
-| `GET` | `/api/case-files/:id/audit-logs` | Historial de auditor\u00eda |
+| `POST` | `/api/case-files/:id/request-correction` | Solicitar corrección |
+| `GET` | `/api/case-files/:id/audit-logs` | Historial de auditoría |
 | `GET` | `/api/case-files/:id/alerts` | Alertas del expediente |
-| `GET` | `/api/alerts` | Alertas no le\u00eddas |
-| `PATCH` | `/api/alerts/:id/read` | Marcar alerta como le\u00edda |
+| `GET` | `/api/alerts` | Alertas no leídas |
+| `PATCH` | `/api/alerts/:id/read` | Marcar alerta como leída |
+
+Los documentos se suben como archivo real en `POST /api/case-files/:id/documents` usando `multipart/form-data`. Se almacenan en `uploads/case-files/:id/` y soportan PDF, PNG, JPG, DOC y XLS hasta 10MB.
+
+El historial de auditoría se muestra en la UI como una línea de tiempo profesional, con etiquetas de eventos legibles en español y el JSON técnico colapsado por defecto.
 
 ---
 
@@ -175,22 +203,22 @@ pytest app/tests/ -v
 
 ```
 DDC/
-\u251c\u2500\u2500 app/
-\u2502   \u251c\u2500\u2500 __init__.py          # Flask app factory
-\u2502   \u251c\u2500\u2500 config.py            # Configuraci\u00f3n por entorno
-\u2502   \u251c\u2500\u2500 extensions.py        # SQLAlchemy, Migrate, CORS
-\u2502   \u251c\u2500\u2500 models/              # Modelos SQLAlchemy
-\u2502   \u251c\u2500\u2500 routes/              # Blueprints API
-\u2502   \u251c\u2500\u2500 services/            # L\u00f3gica de dominio
-\u2502   \u251c\u2500\u2500 schemas/             # Marshmallow schemas
-\u2502   \u251c\u2500\u2500 repositories/        # Acceso a datos
-\u2502   \u251c\u2500\u2500 seed/                # Datos demo
-\u2502   \u251c\u2500\u2500 tests/               # Tests backend
-\u2502   \u251c\u2500\u2500 frontend/            # React app
-\u251c\u2500\u2500 instance/              # SQLite DB (ignorado por git)
-\u251c\u2500\u2500 run.py                  # Entry point
-\u251c\u2500\u2500 requirements.txt
-\u251c\u2500\u2500 package.json
+├── app/
+│   ├── __init__.py          # Flask app factory
+│   ├── config.py            # Configuración por entorno
+│   ├── extensions.py        # SQLAlchemy, Migrate, CORS
+│   ├── models/              # Modelos SQLAlchemy
+│   ├── routes/              # Blueprints API
+│   ├── services/            # Lógica de dominio
+│   ├── schemas/             # Marshmallow schemas
+│   ├── repositories/        # Acceso a datos
+│   ├── seed/                # Datos demo
+│   ├── tests/               # Tests backend
+│   ├── frontend/            # React app
+├── instance/              # SQLite DB (ignorado por git)
+├── run.py                  # Entry point
+├── requirements.txt
+├── package.json
 ```
 
 ---
@@ -205,14 +233,14 @@ mkdir instance
 ```
 
 ### Error de CORS al login
-Verific\u00e1 que `supports_credentials: True` est\u00e9 configurado en `app/__init__.py`:
+Verificá que `supports_credentials: True` esté configurado en `app/__init__.py`:
 
 ```python
 cors.init_app(app, resources={r"/api/*": {"origins": "*", "supports_credentials": True}})
 ```
 
 ### Tailwind v4 — error de clipboard
-Si aparece `Cannot read "clipboard"`, instal\u00e1 el plugin PostCSS correcto:
+Si aparece `Cannot read "clipboard"`, instalá el plugin PostCSS correcto:
 
 ```bash
 cd DDC/frontend
@@ -230,7 +258,7 @@ export default {
 ```
 
 ### Backend no responde en puerto 5001
-Verific\u00e1 que el servidor est\u00e9 corriendo. En Windows:
+Verificá que el servidor esté corriendo. En Windows:
 
 ```bash
 cd DDC
@@ -244,8 +272,8 @@ python run.py
 
 - **No subir al repo**: archivos `.sqlite`, `.env`, `node_modules/`, `instance/`, `__pycache__/`
 - **No usar datos reales** en seeds o pruebas
-- **La sesi\u00f3n es server-side** con `Flask-Session`. Las credenciales no se almacenan en el frontend como fuente de verdad
-- **El motor de riesgo con bypass por sanciones es la regla m\u00e1s cr\u00edtica** del sistema. Si falla, el sistema pierde su prop\u00f3sito regulatorio
+- **La sesión es server-side** con `Flask-Session`. Las credenciales no se almacenan en el frontend como fuente de verdad
+- **El motor de riesgo con derivación por sanciones es la regla más crítica** del sistema. Si falla, el sistema pierde su propósito regulatorio
 
 ---
 
@@ -253,34 +281,34 @@ python run.py
 
 ```
 Paso 1: Datos del Cliente
-  \u2192 Nombre, tipo/n\u00famero de identificaci\u00f3n, pa\u00eds
+  → Nombre, tipo/número de identificación, país
 
 Paso 2: Perfil de Riesgo
-  \u2192 S, J, P, V, O (variables de riesgo)
-  \u2192 Backend consulta screening de sanciones mock
-  \u2192 Si L = COINCIDENCIA_CONFIRMADA \u2192 BLOQUEO INMEDIATO
+  → S, J, P, V, O (variables de riesgo)
+  → Backend consulta screening de sanciones mock
+  → Si L = COINCIDENCIA_CONFIRMADA → EN_REVISION con blocked_by_sanctions=true y alerta
 
 Paso 3: Documentos
-  \u2192 Declaraci\u00f3n de documentos (MVP - upload real en desarrollo)
+  → Upload real de documentos PDF, PNG, JPG, DOC o XLS hasta 10MB
 
-Paso 4: Revisi\u00f3n y Env\u00edo
-  \u2192 Resumen completo
-  \u2192 Enviar a revisi\u00f3n o guardar como borrador
+Paso 4: Revisión y Envío
+  → Resumen completo
+  → Enviar a revisión o guardar como borrador
 ```
 
 ---
 
-## Pruebas De La Regla Cr\u00edtica
+## Pruebas De La Regla Crítica
 
 Para verificar que el bypass por sanciones funciona:
 
 1. Logueate como `analista@demo.com`
-2. Cre\u00e1 un expediente con nombre **"Cliente Sancionado Demo"**
-3. Complet\u00e1 el perfil de riesgo
-4. Observ\u00e1 que el expediente queda **BLOQUEADO_POR_SANCIONES**
+2. Creá un expediente con nombre **"Cliente Sancionado Demo"**
+3. Completá el perfil de riesgo
+4. Observá que el expediente queda **EN_REVISION** con `blocked_by_sanctions = true`
 5. Logueate como `oficial@demo.com`
-6. Revis\u00e1 el expediente bloqueado
-7. Desbloquealo con justificaci\u00f3n de falso positivo
+6. Revisá el expediente con alerta por sanciones confirmadas
+7. Aprobá, rechazá o solicitá corrección según corresponda
 # Evolución de Arquitectura: Del Informe de DDC a Producción (Motor de Riesgos)
 
 Este documento detalla la transición, las nuevas reglas de negocio y las optimizaciones aplicadas al sistema de **Debida Diligencia Continua (DDC)**. Su objetivo es servir de puente entre el planteamiento conceptual del informe y la especificación técnica de producción necesaria para el desarrollo de la API y el backend.
@@ -298,7 +326,7 @@ Estos elementos **no existían en absoluto** en el informe original y se introdu
     * **Alto:** 61 - 90 puntos
     * **Muy Alto:** 91+ puntos
       
-* **El Rol de "Auditor Interno":** El informe original solo contemplaba operativamente al Oficial KYC y al Oficial de Cumplimiento. Se agregó este tercer rol técnico con permisos exclusivos de solo lectura (`Read-Only`) orientado al control inmutable de trazas y logs de auditoría.
+* **El Rol de `OFICIAL_AUDITORIA`:** El informe original solo contemplaba operativamente al Oficial KYC y al Oficial de Cumplimiento. Se agregó este tercer rol técnico con permisos exclusivos de solo lectura (`Read-Only`) orientado al control inmutable de trazas y logs de auditoría, sin acceso a borradores, correcciones ni alertas.
 
 ---
 
@@ -306,15 +334,15 @@ Estos elementos **no existían en absoluto** en el informe original y se introdu
 
 Estos componentes **ya estaban presentes o descritos en el informe**, pero su lógica presentaba conflictos regulatorios o vacíos operativos que fueron subsanados para su implementación real:
 
-* **Sincronización del Cortocircuito de Bloqueo (Caso de Uso CU-03):** * *En el Informe:* El CU-03 ya establecía correctamente que una coincidencia en listas de sanciones bloqueaba el Paso 1 del formulario.
-    * *Modificaciones:* Se resolvió un conflicto con la nueva fórmula matemática. Si el backend detecta un positivo confirmado (`L = COINCIDENCIA_CONFIRMADA`), se dispara un *short-circuit* (bypass) que deniega el negocio de inmediato, aborta el flujo y pasa el expediente a `RECHAZADO`, impidiendo que la fórmula sume puntos en un proceso que ya está legalmente muerto.
+* **Sincronización de la Derivación por Sanciones (Caso de Uso CU-03):** * *En el Informe:* El CU-03 ya establecía correctamente que una coincidencia en listas de sanciones requería tratamiento especial.
+    * *Modificaciones:* Se resolvió un conflicto con la nueva fórmula matemática. Si el backend detecta un positivo confirmado (`L = COINCIDENCIA_CONFIRMADA`), el expediente pasa a `EN_REVISION` con `blocked_by_sanctions = true` y alerta a `OFICIAL_CUMPLIMIENTO` para decisión formal.
 * **Estructuración de la Matriz de Permisos (RBAC):**
     * *En el Informe:* Los roles de Oficial KYC y Cumplimiento ya operaban en las pantallas y flujos descritos.
-    * *Modificaciones:* Se eliminaron las ambigüedades donde las funciones se mezclaban (como que el KYC aprobara casos de riesgo medio). Se estructuraron formalmente en una **Matriz de Control de Acceso Basado en Roles (RBAC)** en formato de tabla para validar tokens de usuario, dejando claro que KYC *crea/edita* y Cumplimiento es el único que *aprueba/rechaza*.
+    * *Modificaciones:* Se eliminaron las ambigüedades donde las funciones se mezclaban (como que el KYC aprobara casos de riesgo medio). Se estructuraron formalmente en una **Matriz de Control de Acceso Basado en Roles (RBAC)** en formato de tabla para validar tokens de usuario, dejando claro que `ANALISTA` *crea/edita/finaliza*, `OFICIAL_CUMPLIMIENTO` *aprueba/rechaza/solicita corrección* y `OFICIAL_AUDITORIA` solo consulta.
 * **Ciclo de Vida del Expediente (Máquina de Estados Finita):**
     * *En el Informe:* Se usaban términos sueltos y desconectados como *"Verificación pendiente"* o *"Completado"*.
     * *Modificaciones:* Se estandarizó el pipeline del backend en una máquina de estados limpia y rígida para controlar los flujos de las peticiones HTTP de la API:
-        $$\text{BORRADOR} \longrightarrow \text{EN\_REVISION} \longrightarrow \text{PENDIENTE\_APROBACION} \longrightarrow \begin{cases} \text{APROBADO} \\ \text{RECHAZADO} \end{cases}$$
+        $$\text{BORRADOR} \longrightarrow \text{EN\_REVISION} \longrightarrow \begin{cases} \text{APROBADO} \\ \text{RECHAZADO} \\ \text{REQUIERE\_CORRECCION} \end{cases}$$
 * **Estandarización de Clasificaciones (Eliminación de Estados Huérfanos):**
     * *En el Informe:* El JSON de ejemplo provisto para el cliente real arrojaba un nivel de riesgo `"MEDIO_ALTO"`.
     * *Modificaciones:* Se eliminó este término por completo, ya que no existe en la matriz regulatoria de Panamá ni en los condicionales (`if/else`) del backend. Todo se mapea estrictamente a los 4 niveles oficiales basados en los umbrales de la fórmula.
