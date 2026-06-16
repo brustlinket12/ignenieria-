@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import type { CaseFile, AuditLog } from '../types/api';
 import CaseFileStatusBadge from '../components/CaseFileStatusBadge';
 import RiskLevelBadge from '../components/RiskLevelBadge';
+import { getRoleTheme } from '../theme/roleTheme';
 
 export default function CaseFileDetail() {
   const { id } = useParams<{ id: string }>();
@@ -14,8 +15,14 @@ export default function CaseFileDetail() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [showUnblockModal, setShowUnblockModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [correctionNote, setCorrectionNote] = useState('');
+  const [showCorrectionForm, setShowCorrectionForm] = useState(false);
   const [unblockJustification, setUnblockJustification] = useState('');
+  const [showUnblockForm, setShowUnblockForm] = useState(false);
+
+  const roleTheme = getRoleTheme(user?.role);
 
   useEffect(() => {
     if (id) {
@@ -55,13 +62,36 @@ export default function CaseFileDetail() {
   };
 
   const handleReject = async () => {
-    if (!caseFile) return;
+    if (!caseFile || !rejectReason.trim()) {
+      alert('Debe ingresar el motivo del rechazo');
+      return;
+    }
     try {
       setActionLoading(true);
-      await api.post(`/case-files/${caseFile.id}/reject`);
+      await api.post(`/case-files/${caseFile.id}/reject`, { reason: rejectReason });
+      setShowRejectForm(false);
+      setRejectReason('');
       loadCaseFile();
     } catch (error: any) {
       alert(error.response?.data?.error || 'Error al rechazar');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRequestCorrection = async () => {
+    if (!caseFile || !correctionNote.trim()) {
+      alert('Debe ingresar la nota de correccion');
+      return;
+    }
+    try {
+      setActionLoading(true);
+      await api.post(`/case-files/${caseFile.id}/request-correction`, { correction_note: correctionNote });
+      setShowCorrectionForm(false);
+      setCorrectionNote('');
+      loadCaseFile();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Error al solicitar correccion');
     } finally {
       setActionLoading(false);
     }
@@ -77,7 +107,7 @@ export default function CaseFileDetail() {
       await api.post(`/case-files/${caseFile.id}/unblock`, {
         justification: unblockJustification,
       });
-      setShowUnblockModal(false);
+      setShowUnblockForm(false);
       setUnblockJustification('');
       loadCaseFile();
     } catch (error: any) {
@@ -95,8 +125,7 @@ export default function CaseFileDetail() {
     return <div className="p-6">Expediente no encontrado</div>;
   }
 
-  const canApprove = user?.role === 'OFICIAL_CUMPLIMIENTO' || user?.role === 'ADMIN';
-  const canUnblock = user?.role === 'OFICIAL_CUMPLIMIENTO';
+  const isOfficial = user?.role === 'OFICIAL_CUMPLIMIENTO';
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -203,76 +232,145 @@ export default function CaseFileDetail() {
         )}
       </div>
 
-      {/* Acciones */}
-      {caseFile.status === 'EN_REVISION' && canApprove && (
+      {/* Acciones de Oficial de Cumplimiento */}
+      {caseFile.status === 'EN_REVISION' && isOfficial && (
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Acciones de Revision</h2>
-          <div className="flex gap-4">
-            <button
-              onClick={handleApprove}
-              disabled={actionLoading}
-              className="flex-1 bg-green-600 text-white py-3 rounded hover:bg-green-700 disabled:opacity-50"
-            >
-              {actionLoading ? 'Procesando...' : 'Aprobar Expediente'}
-            </button>
-            <button
-              onClick={handleReject}
-              disabled={actionLoading}
-              className="flex-1 bg-red-600 text-white py-3 rounded hover:bg-red-700 disabled:opacity-50"
-            >
-              {actionLoading ? 'Procesando...' : 'Rechazar Expediente'}
-            </button>
-          </div>
+          <h2 className="text-lg font-semibold mb-4 text-violet-700">Acciones de Revision</h2>
+
+          {!showRejectForm && !showCorrectionForm && (
+            <div className="flex gap-4">
+              <button
+                onClick={handleApprove}
+                disabled={actionLoading}
+                className={`flex-1 ${roleTheme.primary} text-white py-3 rounded ${roleTheme.primaryHover} disabled:opacity-50`}
+              >
+                {actionLoading ? 'Procesando...' : 'Aprobar Expediente'}
+              </button>
+              <button
+                onClick={() => setShowCorrectionForm(true)}
+                disabled={actionLoading}
+                className="flex-1 bg-amber-500 text-white py-3 rounded hover:bg-amber-600 disabled:opacity-50"
+              >
+                Solicitar Correccion
+              </button>
+              <button
+                onClick={() => setShowRejectForm(true)}
+                disabled={actionLoading}
+                className="flex-1 bg-red-600 text-white py-3 rounded hover:bg-red-700 disabled:opacity-50"
+              >
+                Rechazar Expediente
+              </button>
+            </div>
+          )}
+
+          {showRejectForm && (
+            <div className="border border-red-200 rounded-lg p-4 bg-red-50">
+              <h3 className="font-medium text-red-700 mb-2">Rechazar Expediente</h3>
+              <p className="text-sm text-red-600 mb-3">Ingrese el motivo del rechazo:</p>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                className="w-full px-3 py-2 border border-red-300 rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-red-500"
+                rows={3}
+                placeholder="Motivo del rechazo..."
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowRejectForm(false); setRejectReason(''); }}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleReject}
+                  disabled={actionLoading || !rejectReason.trim()}
+                  className="flex-1 bg-red-600 text-white py-2 rounded hover:bg-red-700 disabled:opacity-50"
+                >
+                  {actionLoading ? 'Procesando...' : 'Confirmar Rechazo'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {showCorrectionForm && (
+            <div className="border border-amber-200 rounded-lg p-4 bg-amber-50">
+              <h3 className="font-medium text-amber-700 mb-2">Solicitar Correccion</h3>
+              <p className="text-sm text-amber-600 mb-3">Ingrese las correcciones requeridas:</p>
+              <textarea
+                value={correctionNote}
+                onChange={(e) => setCorrectionNote(e.target.value)}
+                className="w-full px-3 py-2 border border-amber-300 rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                rows={3}
+                placeholder="Correcciones requeridas..."
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowCorrectionForm(false); setCorrectionNote(''); }}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleRequestCorrection}
+                  disabled={actionLoading || !correctionNote.trim()}
+                  className="flex-1 bg-amber-500 text-white py-2 rounded hover:bg-amber-600 disabled:opacity-50"
+                >
+                  {actionLoading ? 'Procesando...' : 'Confirmar Correccion'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {caseFile.status === 'BLOQUEADO_POR_SANCIONES' && canUnblock && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+      {caseFile.status === 'BLOQUEADO_POR_SANCIONES' && isOfficial && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6 border-l-4 border-red-500">
           <h2 className="text-lg font-semibold mb-4 text-red-600">Expediente Bloqueado</h2>
           <p className="text-gray-600 mb-4">
             Este expediente fue bloqueado debido a coincidencia con lista de sanciones.
             Solo un Oficial de Cumplimiento puede desbloquearlo marcando como falso positivo.
           </p>
-          <button
-            onClick={() => setShowUnblockModal(true)}
-            className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"
-          >
-            Desbloquear como Falso Positivo
-          </button>
-        </div>
-      )}
 
-      {/* Modal de Desbloqueo */}
-      {showUnblockModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Desbloquear como Falso Positivo</h3>
-            <p className="text-gray-600 mb-4">
-              Debe justificar por que este expediente no representa un riesgo real.
-            </p>
-            <textarea
-              value={unblockJustification}
-              onChange={(e) => setUnblockJustification(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4"
-              rows={4}
-              placeholder="Justificacion requerida..."
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowUnblockModal(false)}
-                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleUnblock}
-                disabled={actionLoading || !unblockJustification.trim()}
-                className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-              >
-                {actionLoading ? 'Procesando...' : 'Confirmar Desbloqueo'}
-              </button>
+          {!showUnblockForm && (
+            <button
+              onClick={() => setShowUnblockForm(true)}
+              className={`${roleTheme.primary} text-white px-6 py-3 rounded ${roleTheme.primaryHover}`}
+            >
+              Desbloquear como Falso Positivo
+            </button>
+          )}
+
+          {showUnblockForm && (
+            <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+              <h3 className="font-medium text-gray-700 mb-2">Desbloquear como Falso Positivo</h3>
+              <p className="text-sm text-gray-600 mb-3">Debe justificar por que este expediente no representa un riesgo real:</p>
+              <textarea
+                value={unblockJustification}
+                onChange={(e) => setUnblockJustification(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                rows={3}
+                placeholder="Justificacion requerida..."
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowUnblockForm(false); setUnblockJustification(''); }}
+                  className="flex-1 bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleUnblock}
+                  disabled={actionLoading || !unblockJustification.trim()}
+                  className={`flex-1 ${roleTheme.primary} text-white py-2 rounded ${roleTheme.primaryHover} disabled:opacity-50`}
+                >
+                  {actionLoading ? 'Procesando...' : 'Confirmar Desbloqueo'}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

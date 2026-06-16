@@ -15,6 +15,8 @@ export default function CaseFileList() {
   const [loading, setLoading] = useState(true);
 
   const theme = getRoleTheme(user?.role as any);
+  const isAnalista = user?.role === 'ANALISTA';
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     loadCaseFiles();
@@ -37,12 +39,14 @@ export default function CaseFileList() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Expedientes</h1>
-        <button
-          onClick={() => navigate('/case-files/new')}
-          className={`px-5 py-2.5 rounded-lg font-medium text-white transition-colors ${theme.primary} ${theme.primaryHover}`}
-        >
-          + Nuevo Expediente
-        </button>
+        {(isAnalista || isAdmin) && (
+          <button
+            onClick={() => navigate('/case-files/new')}
+            className={`px-5 py-2.5 rounded-lg font-medium text-white transition-colors ${theme.primary} ${theme.primaryHover}`}
+          >
+            + Nuevo Expediente
+          </button>
+        )}
       </div>
 
       {/* Filtros */}

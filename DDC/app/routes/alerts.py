@@ -1,6 +1,11 @@
 from flask import Blueprint, request, jsonify, session
 from app.models.alert import Alert
 from app.models.user import User
+from app.services.alert_service import (
+    get_unread_alerts,
+    mark_alert_read,
+    create_alert_for_role,
+)
 
 alerts_bp = Blueprint("alerts", __name__)
 
@@ -11,7 +16,12 @@ def list_alerts():
     if not user_id:
         return jsonify({"error": "No autenticado"}), 401
 
-    alerts = Alert.query.filter_by(read=False).order_by(Alert.created_at.desc()).all()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+
+    # Filtrar alertas por usuario o rol
+    alerts = get_unread_alerts(user_id=user.id, user_role=user.role)
     return jsonify([a.to_dict() for a in alerts]), 200
 
 
@@ -24,6 +34,10 @@ def mark_read(alert_id):
     alert = Alert.query.get(alert_id)
     if not alert:
         return jsonify({"error": "Alerta no encontrada"}), 404
+
+    # Solo puede marcar como leida si es para el o para su rol
+    if (alert.recipient_user_id and alert.recipient_user_id != user_id):
+        return jsonify({"error": "No tienes permiso"}), 403
 
     alert.read = True
     from app.extensions import db

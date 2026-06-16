@@ -19,8 +19,9 @@ class CaseFile(db.Model):
     submitted_at = db.Column(db.DateTime, nullable=True)
     approved_at = db.Column(db.DateTime, nullable=True)
     rejected_at = db.Column(db.DateTime, nullable=True)
+    rejection_reason = db.Column(db.Text, nullable=True)  # Razon de rechazo o correccion requerida
 
-    # Estados: BORRADOR, EN_REVISION, APROBADO, RECHAZADO, BLOQUEADO_POR_SANCIONES, DESBLOQUEADO_FALSO_POSITIVO
+    # Estados: BORRADOR, EN_REVISION, APROBADO, RECHAZADO, BLOQUEADO_POR_SANCIONES, DESBLOQUEADO_FALSO_POSITIVO, REQUIERE_CORRECCION
 
     # Relaciones
     client = db.relationship("Client", back_populates="case_files")
@@ -42,6 +43,7 @@ class CaseFile(db.Model):
             "blocked_by_sanctions": self.blocked_by_sanctions,
             "created_by": self.created_by,
             "reviewed_by": self.reviewed_by,
+            "rejection_reason": self.rejection_reason,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None,
@@ -49,4 +51,6 @@ class CaseFile(db.Model):
             "rejected_at": self.rejected_at.isoformat() if self.rejected_at else None,
             "risk_assessment": self.risk_assessment.to_dict() if self.risk_assessment else None,
             "sanctions_screening": [s.to_dict() for s in self.sanctions_screening] if self.sanctions_screening else [],
+            "documents": [d.to_dict() for d in self.documents] if self.documents else [],
+            "alerts": [a.to_dict() for a in self.alerts] if self.alerts else [],
         }

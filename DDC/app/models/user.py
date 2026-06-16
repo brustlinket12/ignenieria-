@@ -30,6 +30,9 @@ class User(db.Model):
     def is_admin(self):
         return self.role == "ADMIN"
 
+    def is_analista(self):
+        return self.role == "ANALISTA"
+
     def to_dict(self):
         return {
             "id": self.id,
