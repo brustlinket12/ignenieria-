@@ -70,6 +70,16 @@ R = S + J + P + V + O + L
 | `O` | Origen de fondos (0-10) |
 | `L` | Listas de sanciones (0 ó 3) |
 
+**Volumen transaccional (`V`):**
+
+| Rango | Puntaje |
+|-------|---------|
+| Hasta USD 10,000 | 0 |
+| USD 10,001 - 50,000 | 5 |
+| USD 50,001 - 100,000 | 10 |
+| USD 100,001 - 500,000 | 15 |
+| Mas de USD 500,000 | 20 |
+
 **Rangos de riesgo:**
 
 | Puntaje | Nivel |

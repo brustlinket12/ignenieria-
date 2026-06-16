@@ -52,9 +52,11 @@ PEP_SCORES = {
 
 # Volumen Transacciones (V)
 VOLUME_SCORES = {
-    "BAJO": 5,
-    "MEDIO": 10,
-    "ALTO": 20,
+    "HASTA_10000": 0,
+    "10001_50000": 5,
+    "50001_100000": 10,
+    "100001_500000": 15,
+    "MAS_500000": 20,
 }
 
 # Origen de Fondos (O)
@@ -82,7 +84,7 @@ def calculate_risk_from_selections(selections):
         "sector_economico": "CASINOS_JUEGOS_AZAR",
         "jurisdiccion": "PANAMA",
         "pep_status": "NO_PEP",
-        "volumen_transacciones": "ALTO",
+        "volumen_transacciones": "MAS_500000",
         "origen_fondos": "ACTIVIDAD_COMERCIAL_DECLARADA",
     }
     """

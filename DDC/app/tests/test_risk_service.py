@@ -5,7 +5,7 @@ from app.models.user import User
 from app.models.client import Client
 from app.models.case_file import CaseFile
 from app.models.risk_assessment import RiskAssessment
-from app.services.risk_service import calculate_risk
+from app.services.risk_service import VOLUME_SCORES, calculate_risk, calculate_risk_from_selections
 
 
 @pytest.fixture
@@ -56,6 +56,29 @@ def setup_case_file(app, client_data):
 
 class TestRiskService:
     """Tests para el servicio de calculo de riesgo."""
+
+    @pytest.mark.parametrize(
+        ("volumen_transacciones", "expected_score"),
+        [
+            ("HASTA_10000", 0),
+            ("10001_50000", 5),
+            ("50001_100000", 10),
+            ("100001_500000", 15),
+            ("MAS_500000", 20),
+        ],
+    )
+    def test_volumen_transacciones_nuevos_rangos(self, volumen_transacciones, expected_score):
+        assert VOLUME_SCORES[volumen_transacciones] == expected_score
+
+        scores = calculate_risk_from_selections({
+            "sector_economico": "BANCO_FINANCIERA_REGULADA",
+            "jurisdiccion": "PANAMA",
+            "pep_status": "NO_PEP",
+            "volumen_transacciones": volumen_transacciones,
+            "origen_fondos": "SALARIO_RELACION_LABORAL",
+        })
+
+        assert scores["volume_score"] == expected_score
 
     def test_riesgo_bajo(self, app, setup_case_file):
         """R = 5+5+5+5+5+0 = 25 -> BAJO (0-30)"""

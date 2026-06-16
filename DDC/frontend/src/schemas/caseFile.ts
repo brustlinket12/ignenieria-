@@ -45,9 +45,11 @@ export const PEP_OPTIONS = [
 ];
 
 export const VOLUME_OPTIONS = [
-  { value: "BAJO", label: "Bajo", score: 5 },
-  { value: "MEDIO", label: "Medio", score: 10 },
-  { value: "ALTO", label: "Alto", score: 20 },
+  { value: "HASTA_10000", label: "Hasta USD 10,000", score: 0 },
+  { value: "10001_50000", label: "USD 10,001 - 50,000", score: 5 },
+  { value: "50001_100000", label: "USD 50,001 - 100,000", score: 10 },
+  { value: "100001_500000", label: "USD 100,001 - 500,000", score: 15 },
+  { value: "MAS_500000", label: "Mas de USD 500,000", score: 20 },
 ];
 
 export const FUNDS_ORIGIN_OPTIONS = [
