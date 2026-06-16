@@ -235,25 +235,22 @@ def submit(case_file_id):
         case_file = submit_case_file(case_file_id)
         log_event(case_file_id, user.id, "CASE_SUBMITTED", {})
 
+        risk_level = None
+        if case_file.risk_assessment:
+            risk_level = case_file.risk_assessment.risk_level
+
         if case_file.status == "APROBADO":
             create_alert(
                 case_file_id,
-                "EXPEDIENTE_APROBADO_AUTOMATICO",
-                "Aprobado automaticamente por riesgo BAJO",
+                "EXPEDIENTE_APROBADO",
+                f"Tu expediente #{case_file_id} fue APROBADO automaticamente por riesgo BAJO",
                 recipient_user_id=case_file.created_by,
             )
-        elif case_file.blocked_by_sanctions:
+        elif case_file.blocked_by_sanctions or risk_level in ("ALTO", "MUY_ALTO"):
             create_alert_for_role(
                 case_file_id,
-                "COINCIDENCIA_SANCIONES",
-                "Coincidencia en sanciones",
-                "OFICIAL_CUMPLIMIENTO"
-            )
-        else:
-            create_alert_for_role(
-                case_file_id,
-                "NUEVO_EXPEDIENTE",
-                "Nuevo expediente en revision",
+                "ALTO_RIESGO" if risk_level in ("ALTO", "MUY_ALTO") else "SANCIONES_ALERTA",
+                f"Expediente #{case_file_id} requiere revision {'por riesgo ' + risk_level if risk_level else 'por coincidencia en sanciones'}",
                 "OFICIAL_CUMPLIMIENTO"
             )
 

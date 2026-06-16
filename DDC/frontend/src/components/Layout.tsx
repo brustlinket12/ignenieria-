@@ -32,9 +32,11 @@ export default function Layout({ children }: LayoutProps) {
               <Link to="/case-files" className={`${theme.headerText} opacity-90 hover:opacity-100 transition-opacity`}>
                 Expedientes
               </Link>
-              <Link to="/alerts" className={`${theme.headerText} opacity-90 hover:opacity-100 transition-opacity`}>
-                Alertas
-              </Link>
+              {user?.role !== 'OFICIAL_AUDITORIA' && (
+                <Link to="/alerts" className={`${theme.headerText} opacity-90 hover:opacity-100 transition-opacity`}>
+                  Alertas
+                </Link>
+              )}
             </nav>
           </div>
           <div className="flex items-center gap-4">

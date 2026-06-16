@@ -1,6 +1,9 @@
 from app.models.alert import Alert
+from app.models.case_file import CaseFile
+from app.models.risk_assessment import RiskAssessment
 from app.models.user import User
 from app.extensions import db
+from sqlalchemy import or_
 
 
 def create_alert(case_file_id, alert_type, message, recipient_user_id=None, recipient_role=None):
@@ -58,6 +61,14 @@ def get_unread_alerts(user_id=None, user_role=None):
         )
     else:
         query = Alert.query.filter_by(read=False)
+
+    if user_role == "OFICIAL_CUMPLIMIENTO":
+        query = query.join(CaseFile, CaseFile.id == Alert.case_file_id)
+        query = query.outerjoin(RiskAssessment, RiskAssessment.case_file_id == CaseFile.id)
+        query = query.filter(or_(
+            RiskAssessment.risk_level.in_(["ALTO", "MUY_ALTO"]),
+            CaseFile.blocked_by_sanctions == True,
+        ))
 
     return query.order_by(Alert.created_at.desc()).all()
 

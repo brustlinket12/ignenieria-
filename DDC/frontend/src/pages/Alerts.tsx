@@ -1,14 +1,27 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { useAuthStore } from '../stores/authStore';
 import type { Alert } from '../types/api';
 
 export default function Alerts() {
+  const { user } = useAuthStore();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const isAuditoria = user?.role === 'OFICIAL_AUDITORIA';
 
   useEffect(() => {
-    loadAlerts();
-  }, []);
+    if (user && !isAuditoria) {
+      loadAlerts();
+    }
+  }, [user?.role, isAuditoria]);
+
+  if (isAuditoria) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-gray-500">No tienes acceso a alertas.</p>
+      </div>
+    );
+  }
 
   const loadAlerts = async () => {
     try {

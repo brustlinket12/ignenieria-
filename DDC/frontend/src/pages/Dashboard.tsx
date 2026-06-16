@@ -29,7 +29,7 @@ export default function Dashboard() {
     try {
       const [cfRes, alertRes] = await Promise.all([
         api.get('/case-files'),
-        api.get('/alerts'),
+        isAuditoria ? Promise.resolve({ data: [] }) : api.get('/alerts'),
       ]);
       setCaseFiles(cfRes.data);
       setAlerts(alertRes.data);
@@ -49,8 +49,10 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (user) {
+      loadData();
+    }
+  }, [user?.role]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -176,34 +178,35 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Alertas - mas destacado para oficial */}
-      <div className={`rounded-lg shadow-sm p-6 ${isOficial ? 'bg-red-50 border border-red-200' : 'bg-white'}`}>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className={`text-lg font-semibold ${isOficial ? 'text-red-800' : 'text-gray-800'}`}>
-            {isOficial ? 'Alertas Criticas' : 'Alertas Pendientes'}
-          </h2>
-          <Link to="/alerts" className={`text-sm font-medium ${theme.accent} hover:underline`}>
-            Ver todas
-          </Link>
+      {!isAuditoria && (
+        <div className={`rounded-lg shadow-sm p-6 ${isOficial ? 'bg-red-50 border border-red-200' : 'bg-white'}`}>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className={`text-lg font-semibold ${isOficial ? 'text-red-800' : 'text-gray-800'}`}>
+              {isOficial ? 'Alertas Criticas' : 'Alertas Pendientes'}
+            </h2>
+            <Link to="/alerts" className={`text-sm font-medium ${theme.accent} hover:underline`}>
+              Ver todas
+            </Link>
+          </div>
+          {alerts.length === 0 ? (
+            <p className="text-gray-500">No hay alertas pendientes</p>
+          ) : (
+            <ul className="space-y-3">
+              {alerts.slice(0, 5).map((alert) => (
+                <li key={alert.id} className={`flex items-start gap-3 p-3 rounded ${isOficial ? 'bg-white border border-red-100' : 'bg-yellow-50'}`}>
+                  <span className={`text-lg ${isOficial ? 'text-red-500' : 'text-yellow-600'}`}>⚠️</span>
+                  <div>
+                    <p className={`font-medium ${isOficial ? 'text-red-800' : 'text-gray-800'}`}>{alert.message}</p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(alert.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        {alerts.length === 0 ? (
-          <p className="text-gray-500">No hay alertas pendientes</p>
-        ) : (
-          <ul className="space-y-3">
-            {alerts.slice(0, 5).map((alert) => (
-              <li key={alert.id} className={`flex items-start gap-3 p-3 rounded ${isOficial ? 'bg-white border border-red-100' : 'bg-yellow-50'}`}>
-                <span className={`text-lg ${isOficial ? 'text-red-500' : 'text-yellow-600'}`}>⚠️</span>
-                <div>
-                  <p className={`font-medium ${isOficial ? 'text-red-800' : 'text-gray-800'}`}>{alert.message}</p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(alert.created_at).toLocaleString()}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      )}
     </div>
   );
 }

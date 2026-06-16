@@ -19,6 +19,8 @@ def list_alerts():
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "Usuario no encontrado"}), 404
+    if user.is_oficial_auditoria():
+        return jsonify({"error": "No tienes permiso para ver alertas"}), 403
 
     # Filtrar alertas por usuario o rol
     alerts = get_unread_alerts(user_id=user.id, user_role=user.role)
@@ -30,6 +32,12 @@ def mark_read(alert_id):
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "No autenticado"}), 401
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+    if user.is_oficial_auditoria():
+        return jsonify({"error": "No tienes permiso para ver alertas"}), 403
 
     alert = Alert.query.get(alert_id)
     if not alert:

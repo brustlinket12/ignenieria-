@@ -3,9 +3,37 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 import { getRoleTheme } from '../theme/roleTheme';
-import type { CaseFile } from '../types/api';
+import type { CaseFile, User } from '../types/api';
 import CaseFileStatusBadge from '../components/CaseFileStatusBadge';
 import RiskLevelBadge from '../components/RiskLevelBadge';
+
+type FilterOption = {
+  value: string;
+  label: string;
+};
+
+const FILTERS_BY_ROLE: Record<User['role'], FilterOption[]> = {
+  ANALISTA: [
+    { value: '', label: 'Todos' },
+    { value: 'BORRADOR', label: 'Borrador' },
+    { value: 'EN_REVISION', label: 'En revision' },
+    { value: 'APROBADO', label: 'Aprobado' },
+    { value: 'RECHAZADO', label: 'Rechazado' },
+  ],
+  OFICIAL_CUMPLIMIENTO: [
+    { value: '', label: 'Todos' },
+    { value: 'EN_REVISION', label: 'En revision' },
+    { value: 'REQUIERE_CORRECCION', label: 'Correccion' },
+    { value: 'APROBADO', label: 'Aprobado' },
+    { value: 'RECHAZADO', label: 'Rechazado' },
+  ],
+  OFICIAL_AUDITORIA: [
+    { value: '', label: 'Todos' },
+    { value: 'EN_REVISION', label: 'En revision' },
+    { value: 'APROBADO', label: 'Aprobado' },
+    { value: 'RECHAZADO', label: 'Rechazado' },
+  ],
+};
 
 export default function CaseFileList() {
   const navigate = useNavigate();
@@ -16,7 +44,6 @@ export default function CaseFileList() {
 
   const theme = getRoleTheme(user?.role);
   const isAnalista = user?.role === 'ANALISTA';
-  const isOficialCumplimiento = user?.role === 'OFICIAL_CUMPLIMIENTO';
   const isOficialAuditoria = user?.role === 'OFICIAL_AUDITORIA';
 
   const loadCaseFiles = async () => {
@@ -52,32 +79,17 @@ export default function CaseFileList() {
 
       {/* Filtros */}
       <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setFilter('')}
-          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-            filter === '' ? `${theme.primary} text-white` : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          Todos
-        </button>
-        {!isOficialCumplimiento && !isOficialAuditoria && (
+        {(user?.role ? FILTERS_BY_ROLE[user.role] : FILTERS_BY_ROLE.ANALISTA).map((f) => (
           <button
-            onClick={() => setFilter('BORRADOR')}
+            key={f.value}
+            onClick={() => setFilter(f.value)}
             className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-              filter === 'BORRADOR' ? `${theme.primary} text-white` : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              filter === f.value ? `${theme.primary} text-white` : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            Borrador
+            {f.label}
           </button>
-        )}
-        <button
-          onClick={() => setFilter('EN_REVISION')}
-          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-            filter === 'EN_REVISION' ? `${theme.primary} text-white` : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          En Revision
-        </button>
+        ))}
       </div>
 
       {/* Tabla */}
