@@ -45,6 +45,7 @@ export default function CaseFileList() {
   const theme = getRoleTheme(user?.role);
   const isAnalista = user?.role === 'ANALISTA';
   const isOficialAuditoria = user?.role === 'OFICIAL_AUDITORIA';
+  const filters = FILTERS_BY_ROLE[user?.role] || FILTERS_BY_ROLE.ANALISTA;
 
   const loadCaseFiles = async () => {
     try {
@@ -79,7 +80,7 @@ export default function CaseFileList() {
 
       {/* Filtros */}
       <div className="flex gap-2 mb-6">
-        {(user?.role ? FILTERS_BY_ROLE[user.role] : FILTERS_BY_ROLE.ANALISTA).map((f) => (
+        {filters.map((f) => (
           <button
             key={f.value}
             onClick={() => setFilter(f.value)}
@@ -120,7 +121,7 @@ export default function CaseFileList() {
                 </td>
               </tr>
             ) : (
-              caseFiles.map((cf) => (
+              (caseFiles || []).map((cf) => (
                 <tr key={cf.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="p-4 font-medium text-gray-800">#{cf.id}</td>
                   <td className="p-4 text-gray-700">{cf.client?.name || '-'}</td>
