@@ -40,7 +40,6 @@ export default function CaseFileForm() {
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'info'; text: string } | null>(null);
 
   const clientForm = useForm<ClientForm>({
     resolver: zodResolver(clientSchema),
@@ -159,15 +158,8 @@ export default function CaseFileForm() {
     try {
       setIsSubmitting(true);
       setError(null);
-      setSubmitMessage(null);
-      const response = await api.post(`/case-files/${caseFileId}/submit`);
-      if (response.data.status === 'APROBADO') {
-        setSubmitMessage({ type: 'success', text: '✓ Expediente aprobado automaticamente por riesgo BAJO' });
-      } else if (response.data.status === 'EN_REVISION') {
-        setSubmitMessage({ type: 'info', text: '✓ Expediente enviado a revision del Oficial de Cumplimiento' });
-      } else {
-        navigate('/case-files');
-      }
+      await api.post(`/case-files/${caseFileId}/submit`);
+      navigate('/case-files');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Error al enviar expediente');
     } finally {
@@ -184,16 +176,6 @@ export default function CaseFileForm() {
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
           {error}
-        </div>
-      )}
-
-      {submitMessage && (
-        <div className={`mb-4 p-4 rounded text-sm ${
-          submitMessage.type === 'success'
-            ? 'bg-green-50 border border-green-200 text-green-700'
-            : 'bg-blue-50 border border-blue-200 text-blue-700'
-        }`}>
-          {submitMessage.text}
         </div>
       )}
 
