@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import type { CaseFile, AuditLog } from '../types/api';
 import CaseFileStatusBadge from '../components/CaseFileStatusBadge';
 import RiskLevelBadge from '../components/RiskLevelBadge';
+import AuditLogTimeline from '../components/AuditLogTimeline';
 import { getRoleTheme } from '../theme/roleTheme';
 
 export default function CaseFileDetail() {
@@ -308,32 +309,7 @@ export default function CaseFileDetail() {
         </div>
       )}
 
-      {/* Historial de Auditoria */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">Historial de Auditoria</h2>
-        {auditLogs.length === 0 ? (
-          <p className="text-gray-500">Sin eventos de auditoria</p>
-        ) : (
-          <ul className="space-y-3">
-            {auditLogs.map((log) => (
-              <li key={log.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded">
-                <span className="text-gray-400 text-sm">#{log.id}</span>
-                <div>
-                  <p className="font-medium">{log.event_type}</p>
-                  {log.payload && (
-                    <pre className="text-xs text-gray-500 mt-1 bg-white p-2 rounded overflow-x-auto">
-                      {JSON.stringify(JSON.parse(log.payload), null, 2)}
-                    </pre>
-                  )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {log.user?.name || 'Sistema'} - {new Date(log.created_at).toLocaleString()}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <AuditLogTimeline logs={caseFile.audit_logs || auditLogs || []} />
     </div>
   );
 }

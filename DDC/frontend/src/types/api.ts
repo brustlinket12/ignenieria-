@@ -76,6 +76,7 @@ export type CaseFile = {
   rejected_at: string | null;
   risk_assessment: RiskAssessment | null;
   sanctions_screening: SanctionsScreening[];
+  audit_logs?: AuditLog[];
 };
 
 export type CaseFileCreate = {
