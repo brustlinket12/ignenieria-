@@ -10,7 +10,6 @@ from app.services import (
     approve_case_file,
     reject_case_file,
     request_correction_case_file,
-    unblock_case_file,
     get_case_file,
     list_case_files,
     calculate_risk,
@@ -37,15 +36,23 @@ def get_current_user():
     return User.query.get(user_id)
 
 
+def is_draft_restricted_for_user(case_file, user):
+    return (
+        case_file.status == "BORRADOR"
+        and user
+        and (user.is_oficial_cumplimiento() or user.is_oficial_auditoria())
+    )
+
+
 @case_files_bp.route("/api/case-files", methods=["POST"])
 def create():
     user = get_current_user()
     if not user:
         return jsonify({"error": "No autenticado"}), 401
 
-    # Solo ANALISTA y ADMIN pueden crear expedientes
-    if not (user.is_analista() or user.is_admin()):
-        return jsonify({"error": "Solo analistas y admins pueden crear expedientes"}), 403
+    # Solo ANALISTA puede crear expedientes
+    if not user.is_analista():
+        return jsonify({"error": "Solo analistas pueden crear expedientes"}), 403
 
     data = request.get_json()
     try:
@@ -58,21 +65,31 @@ def create():
 
 @case_files_bp.route("/api/case-files", methods=["GET"])
 def list_all():
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "No autenticado"}), 401
+
     filters = {}
     if request.args.get("status"):
         filters["status"] = request.args.get("status")
-    if request.args.get("created_by"):
+    if request.args.get("created_by") and not user.is_analista():
         filters["created_by"] = request.args.get("created_by")
 
-    case_files = list_case_files(filters if filters else None)
+    case_files = list_case_files(filters if filters else None, user=user)
     return jsonify([cf.to_dict() for cf in case_files]), 200
 
 
 @case_files_bp.route("/api/case-files/<int:case_file_id>", methods=["GET"])
 def get_one(case_file_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "No autenticado"}), 401
+
     case_file = get_case_file(case_file_id)
     if not case_file:
         return jsonify({"error": "Expediente no encontrado"}), 404
+    if is_draft_restricted_for_user(case_file, user):
+        return jsonify({"error": "No tienes permiso para ver expedientes en borrador"}), 403
     return jsonify(case_file.to_dict()), 200
 
 
@@ -87,8 +104,11 @@ def update_one(case_file_id):
     if not case_file:
         return jsonify({"error": "Expediente no encontrado"}), 404
 
-    if case_file.created_by != user.id and not user.is_admin():
-        return jsonify({"error": "Solo el creador o admin pueden editar"}), 403
+    if not user.is_analista():
+        return jsonify({"error": "Solo analistas pueden editar expedientes"}), 403
+
+    if case_file.created_by != user.id:
+        return jsonify({"error": "Solo el creador puede editar"}), 403
 
     if case_file.status not in ["BORRADOR", "REQUIERE_CORRECCION"]:
         return jsonify({"error": "No se puede editar un expediente en revision o ya procesado"}), 400
@@ -109,9 +129,15 @@ def update_one(case_file_id):
 @case_files_bp.route("/api/case-files/<int:case_file_id>/documents", methods=["GET"])
 def get_documents(case_file_id):
     """Lista todos los documentos de un expediente."""
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "No autenticado"}), 401
+
     case_file = get_case_file(case_file_id)
     if not case_file:
         return jsonify({"error": "Expediente no encontrado"}), 404
+    if is_draft_restricted_for_user(case_file, user):
+        return jsonify({"error": "No tienes permiso para ver documentos de expedientes en borrador"}), 403
 
     documents = list_case_file_documents(case_file_id)
     return jsonify([doc.to_dict() for doc in documents]), 200
@@ -129,8 +155,14 @@ def upload_document(case_file_id):
         return jsonify({"error": "Expediente no encontrado"}), 404
 
     # Solo el creador puede subir documentos si esta en BORRADOR o REQUIERE_CORRECCION
-    if case_file.created_by != user.id and not user.is_admin():
-        return jsonify({"error": "Solo el creador o admin pueden subir documentos"}), 403
+    if is_draft_restricted_for_user(case_file, user):
+        return jsonify({"error": "No tienes permiso para modificar documentos de expedientes en borrador"}), 403
+
+    if not user.is_analista():
+        return jsonify({"error": "Solo analistas pueden subir documentos"}), 403
+
+    if case_file.created_by != user.id:
+        return jsonify({"error": "Solo el creador puede subir documentos"}), 403
 
     if case_file.status not in ["BORRADOR", "REQUIERE_CORRECCION"]:
         return jsonify({"error": "No se pueden agregar documentos a un expediente en revision o ya procesado"}), 400
@@ -169,8 +201,14 @@ def remove_document(case_file_id, document_id):
     if not case_file:
         return jsonify({"error": "Expediente no encontrado"}), 404
 
-    if case_file.created_by != user.id and not user.is_admin():
-        return jsonify({"error": "Solo el creador o admin pueden eliminar documentos"}), 403
+    if is_draft_restricted_for_user(case_file, user):
+        return jsonify({"error": "No tienes permiso para modificar documentos de expedientes en borrador"}), 403
+
+    if not user.is_analista():
+        return jsonify({"error": "Solo analistas pueden eliminar documentos"}), 403
+
+    if case_file.created_by != user.id:
+        return jsonify({"error": "Solo el creador puede eliminar documentos"}), 403
 
     try:
         document = delete_document(document_id, user.id)
@@ -197,13 +235,27 @@ def submit(case_file_id):
         case_file = submit_case_file(case_file_id)
         log_event(case_file_id, user.id, "CASE_SUBMITTED", {})
 
-        # Alertar al oficial de cumplimiento
-        create_alert_for_role(
-            case_file_id,
-            "NUEVO_EXPEDIENTE",
-            f"Nuevo expediente #{case_file_id} enviado a revision por {user.name}",
-            "OFICIAL_CUMPLIMIENTO"
-        )
+        if case_file.status == "APROBADO":
+            create_alert(
+                case_file_id,
+                "EXPEDIENTE_APROBADO_AUTOMATICO",
+                "Aprobado automaticamente por riesgo BAJO",
+                recipient_user_id=case_file.created_by,
+            )
+        elif case_file.blocked_by_sanctions:
+            create_alert_for_role(
+                case_file_id,
+                "COINCIDENCIA_SANCIONES",
+                "Coincidencia en sanciones",
+                "OFICIAL_CUMPLIMIENTO"
+            )
+        else:
+            create_alert_for_role(
+                case_file_id,
+                "NUEVO_EXPEDIENTE",
+                "Nuevo expediente en revision",
+                "OFICIAL_CUMPLIMIENTO"
+            )
 
         return jsonify(case_file.to_dict()), 200
     except Exception as e:
@@ -221,7 +273,7 @@ def risk_assessment(case_file_id):
     if not case_file:
         return jsonify({"error": "Expediente no encontrado"}), 404
 
-    if case_file.created_by != user.id and not user.is_admin():
+    if case_file.created_by != user.id:
         return jsonify({"error": "Solo el creador puede evaluar el riesgo"}), 403
 
     data = request.get_json()
@@ -332,41 +384,17 @@ def request_correction(case_file_id):
         return jsonify({"error": str(e)}), 400
 
 
-@case_files_bp.route("/api/case-files/<int:case_file_id>/unblock", methods=["POST"])
-def unblock(case_file_id):
+@case_files_bp.route("/api/case-files/<int:case_file_id>/audit-logs", methods=["GET"])
+def audit_logs(case_file_id):
     user = get_current_user()
     if not user:
         return jsonify({"error": "No autenticado"}), 401
 
-    data = request.get_json() or {}
-    justification = data.get("justification", "")
-
-    try:
-        case_file = unblock_case_file(case_file_id, user.id, justification)
-        log_event(case_file_id, user.id, "CASE_UNLOCKED_FALSE_POSITIVE", {
-            "justification": justification
-        })
-
-        # Alerta al analista creador
-        create_alert(
-            case_file_id,
-            "DESBLOQUEADO_FALSO_POSITIVO",
-            f"Tu expediente #{case_file_id} fue desbloqueado como falso positivo por {user.name}",
-            recipient_user_id=case_file.created_by,
-        )
-
-        return jsonify(case_file.to_dict()), 200
-    except PermissionError as e:
-        return jsonify({"error": str(e)}), 403
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-
-@case_files_bp.route("/api/case-files/<int:case_file_id>/audit-logs", methods=["GET"])
-def audit_logs(case_file_id):
     case_file = get_case_file(case_file_id)
     if not case_file:
         return jsonify({"error": "Expediente no encontrado"}), 404
+    if is_draft_restricted_for_user(case_file, user):
+        return jsonify({"error": "No tienes permiso para ver auditoria de expedientes en borrador"}), 403
 
     logs = case_file.audit_logs
     return jsonify([log.to_dict() for log in logs]), 200
@@ -374,9 +402,15 @@ def audit_logs(case_file_id):
 
 @case_files_bp.route("/api/case-files/<int:case_file_id>/alerts", methods=["GET"])
 def alerts(case_file_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "No autenticado"}), 401
+
     case_file = get_case_file(case_file_id)
     if not case_file:
         return jsonify({"error": "Expediente no encontrado"}), 404
+    if is_draft_restricted_for_user(case_file, user):
+        return jsonify({"error": "No tienes permiso para ver alertas de expedientes en borrador"}), 403
 
     alerts_list = case_file.alerts
     return jsonify([a.to_dict() for a in alerts_list]), 200

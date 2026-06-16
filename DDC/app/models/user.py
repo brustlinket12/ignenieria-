@@ -10,7 +10,7 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(50), nullable=False)  # ANALISTA, OFICIAL_CUMPLIMIENTO, ADMIN
+    role = db.Column(db.String(50), nullable=False)  # ANALISTA, OFICIAL_CUMPLIMIENTO, OFICIAL_AUDITORIA
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relaciones
@@ -26,6 +26,9 @@ class User(db.Model):
 
     def is_oficial_cumplimiento(self):
         return self.role == "OFICIAL_CUMPLIMIENTO"
+
+    def is_oficial_auditoria(self):
+        return self.role == "OFICIAL_AUDITORIA"
 
     def is_admin(self):
         return self.role == "ADMIN"

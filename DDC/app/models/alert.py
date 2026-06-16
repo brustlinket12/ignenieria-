@@ -8,7 +8,7 @@ class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     case_file_id = db.Column(db.Integer, db.ForeignKey("case_files.id"), nullable=False)
     recipient_user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)  # null = todos los del rol
-    recipient_role = db.Column(db.String(50), nullable=True)  # ANALISTA, OFICIAL_CUMPLIMIENTO, ADMIN
+    recipient_role = db.Column(db.String(50), nullable=True)  # ANALISTA, OFICIAL_CUMPLIMIENTO, OFICIAL_AUDITORIA
     type = db.Column(db.String(50), nullable=False)
     message = db.Column(db.Text, nullable=False)
     read = db.Column(db.Boolean, default=False)

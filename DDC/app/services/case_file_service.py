@@ -11,8 +11,6 @@ VALID_STATUSES = [
     "EN_REVISION",
     "APROBADO",
     "RECHAZADO",
-    "BLOQUEADO_POR_SANCIONES",
-    "DESBLOQUEADO_FALSO_POSITIVO",
     "REQUIERE_CORRECCION",
 ]
 
@@ -67,10 +65,14 @@ def submit_case_file(case_file_id):
     if case_file.status not in ["BORRADOR", "REQUIERE_CORRECCION"]:
         raise ValueError("Solo expedientes en BORRADOR o REQUIERE_CORRECCION pueden ser enviados")
 
+    risk_level = case_file.risk_assessment.risk_level if case_file.risk_assessment else None
     if case_file.blocked_by_sanctions:
-        raise ValueError("No se puede enviar un expediente bloqueado por sanciones")
+        case_file.status = "EN_REVISION"
+    elif risk_level == "BAJO":
+        case_file.status = "APROBADO"
+    else:
+        case_file.status = "EN_REVISION"
 
-    case_file.status = "EN_REVISION"
     case_file.submitted_at = datetime.utcnow()
     case_file.updated_at = datetime.utcnow()
     db.session.commit()
@@ -79,13 +81,13 @@ def submit_case_file(case_file_id):
 
 
 def approve_case_file(case_file_id, user_id):
-    """Aprueba el expediente. Solo OFICIAL_CUMPLIMIENTO o ADMIN."""
+    """Aprueba el expediente. Solo OFICIAL_CUMPLIMIENTO."""
     user = User.query.get(user_id)
     if not user:
         raise PermissionError("Usuario no encontrado")
 
-    if not (user.is_oficial_cumplimiento() or user.is_admin()):
-        raise PermissionError("Solo el Oficial de Cumplimiento o Admin pueden aprobar expedientes")
+    if not user.is_oficial_cumplimiento():
+        raise PermissionError("Solo el Oficial de Cumplimiento puede aprobar expedientes")
 
     case_file = CaseFile.query.get(case_file_id)
     if not case_file:
@@ -104,13 +106,13 @@ def approve_case_file(case_file_id, user_id):
 
 
 def reject_case_file(case_file_id, user_id, reason=None):
-    """Rechaza el expediente. Solo OFICIAL_CUMPLIMIENTO o ADMIN."""
+    """Rechaza el expediente. Solo OFICIAL_CUMPLIMIENTO."""
     user = User.query.get(user_id)
     if not user:
         raise PermissionError("Usuario no encontrado")
 
-    if not (user.is_oficial_cumplimiento() or user.is_admin()):
-        raise PermissionError("Solo el Oficial de Cumplimiento o Admin pueden rechazar expedientes")
+    if not user.is_oficial_cumplimiento():
+        raise PermissionError("Solo el Oficial de Cumplimiento puede rechazar expedientes")
 
     case_file = CaseFile.query.get(case_file_id)
     if not case_file:
@@ -135,14 +137,14 @@ def request_correction_case_file(case_file_id, user_id, correction_note):
     """
     Marca el expediente como REQUIERE_CORRECCION.
     El analista debe corregir y reenviar.
-    Solo OFICIAL_CUMPLIMIENTO o ADMIN.
+    Solo OFICIAL_CUMPLIMIENTO.
     """
     user = User.query.get(user_id)
     if not user:
         raise PermissionError("Usuario no encontrado")
 
-    if not (user.is_oficial_cumplimiento() or user.is_admin()):
-        raise PermissionError("Solo el Oficial de Cumplimiento o Admin pueden solicitar correcciones")
+    if not user.is_oficial_cumplimiento():
+        raise PermissionError("Solo el Oficial de Cumplimiento puede solicitar correcciones")
 
     case_file = CaseFile.query.get(case_file_id)
     if not case_file:
@@ -162,45 +164,20 @@ def request_correction_case_file(case_file_id, user_id, correction_note):
     return case_file
 
 
-def unblock_case_file(case_file_id, user_id, justification):
-    """
-    Desbloquea un expediente marcado como falso positivo.
-    Solo usuarios con rol OFICIAL_CUMPLIMIENTO o ADMIN.
-    """
-    user = User.query.get(user_id)
-    if not user:
-        raise PermissionError("Usuario no encontrado")
-
-    if not (user.is_oficial_cumplimiento() or user.is_admin()):
-        raise PermissionError("Solo oficiales de cumplimiento o admins pueden desbloquear expedientes")
-
-    case_file = CaseFile.query.get(case_file_id)
-    if not case_file:
-        raise ValueError(f"Expediente {case_file_id} no encontrado")
-
-    if case_file.status != "BLOQUEADO_POR_SANCIONES":
-        raise ValueError("Solo expedientes BLOQUEADOS_POR_SANCIONES pueden ser desbloqueados")
-
-    case_file.status = "DESBLOQUEADO_FALSO_POSITIVO"
-    case_file.blocked_by_sanctions = False
-    case_file.reviewed_by = user_id
-    case_file.updated_at = datetime.utcnow()
-    if justification:
-        case_file.rejection_reason = f"Falso positivo: {justification}"
-
-    db.session.commit()
-
-    return case_file
-
-
 def get_case_file(case_file_id):
     """Obtiene un expediente por ID."""
     return CaseFile.query.get(case_file_id)
 
 
-def list_case_files(filters=None):
+def list_case_files(filters=None, user=None):
     """Lista expedientes con filtros opcionales."""
     query = CaseFile.query
+
+    if user:
+        if user.is_analista():
+            query = query.filter(CaseFile.created_by == user.id)
+        elif user.is_oficial_cumplimiento() or user.is_oficial_auditoria():
+            query = query.filter(CaseFile.status != "BORRADOR")
 
     if filters:
         if "status" in filters:
@@ -213,8 +190,8 @@ def list_case_files(filters=None):
 
 def block_case_file_if_sanctions(case_file_id, user_id, sanctions_result):
     """
-    Bloquea un expediente si el screening de sanciones devolvio COINCIDENCIA_CONFIRMADA.
-    Este es el unico punto donde se aplica el bloqueo por sanciones.
+    Marca un expediente con coincidencia en sanciones si el screening devolvio COINCIDENCIA_CONFIRMADA.
+    El envio del expediente decide el enrutamiento segun blocked_by_sanctions.
     """
     from app.services.audit_service import log_event
     from app.services.alert_service import create_alert, create_alert_for_role
@@ -224,7 +201,6 @@ def block_case_file_if_sanctions(case_file_id, user_id, sanctions_result):
         raise ValueError(f"Expediente {case_file_id} no encontrado")
 
     if sanctions_result.result == "COINCIDENCIA_CONFIRMADA":
-        case_file.status = "BLOQUEADO_POR_SANCIONES"
         case_file.blocked_by_sanctions = True
         case_file.updated_at = datetime.utcnow()
         db.session.commit()
@@ -238,7 +214,7 @@ def block_case_file_if_sanctions(case_file_id, user_id, sanctions_result):
         create_alert_for_role(
             case_file_id,
             "BLOQUEO_SANCIONES",
-            f"Expediente #{case_file_id} bloqueado por coincidencia confirmada en lista de sanciones",
+            f"Expediente #{case_file_id} con coincidencia en sanciones confirmada",
             "OFICIAL_CUMPLIMIENTO"
         )
 
@@ -246,7 +222,7 @@ def block_case_file_if_sanctions(case_file_id, user_id, sanctions_result):
         create_alert(
             case_file_id,
             "BLOQUEO_SANCIONES",
-            f"Tu expediente #{case_file_id} fue bloqueado por coincidencia con lista de sanciones",
+            f"Tu expediente #{case_file_id} tiene coincidencia en sanciones",
             recipient_user_id=case_file.created_by,
         )
 

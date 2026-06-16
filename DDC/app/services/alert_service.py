@@ -13,7 +13,7 @@ def create_alert(case_file_id, alert_type, message, recipient_user_id=None, reci
         message: Mensaje de la alerta
         recipient_user_id: Si se especifica, solo ese usuario recibe la alerta
         recipient_role: Si se especifica, todos los usuarios con ese rol reciben la alerta
-                        Puede ser: ANALISTA, OFICIAL_CUMPLIMIENTO, ADMIN
+                        Puede ser: ANALISTA, OFICIAL_CUMPLIMIENTO, OFICIAL_AUDITORIA
     """
     alert = Alert(
         case_file_id=case_file_id,

@@ -17,16 +17,13 @@ export default function Dashboard() {
     enRevision: 0,
     aprobado: 0,
     rechazado: 0,
-    bloqueado: 0,
+    requiereCorreccion: 0,
   });
 
-  const theme = getRoleTheme(user?.role as any);
+  const theme = getRoleTheme(user?.role);
   const isAnalista = user?.role === 'ANALISTA';
   const isOficial = user?.role === 'OFICIAL_CUMPLIMIENTO';
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  const isAuditoria = user?.role === 'OFICIAL_AUDITORIA';
 
   const loadData = async () => {
     try {
@@ -44,12 +41,16 @@ export default function Dashboard() {
         enRevision: data.filter((c: CaseFile) => c.status === 'EN_REVISION').length,
         aprobado: data.filter((c: CaseFile) => c.status === 'APROBADO').length,
         rechazado: data.filter((c: CaseFile) => c.status === 'RECHAZADO').length,
-        bloqueado: data.filter((c: CaseFile) => c.status === 'BLOQUEADO_POR_SANCIONES').length,
+        requiereCorreccion: data.filter((c: CaseFile) => c.status === 'REQUIERE_CORRECCION').length,
       });
     } catch (error) {
       console.error('Error cargando datos:', error);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -59,7 +60,7 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-gray-800">
             {isAnalista && 'Panel de Operacion'}
             {isOficial && 'Panel de Control y Cumplimiento'}
-            {!isAnalista && !isOficial && 'Panel de Administracion'}
+            {!isAnalista && !isOficial && 'Panel de Auditoria'}
           </h1>
           <p className="text-gray-500 text-sm mt-1">{theme.roleDescription}</p>
         </div>
@@ -81,22 +82,11 @@ export default function Dashboard() {
           <p className="text-3xl font-bold text-gray-800">{stats.total}</p>
         </div>
 
-        {/* En Revision - visible para oficial y admin */}
+        {/* En Revision - visible para oficial y auditoria */}
         {(isOficial || !isAnalista) && (
           <div className={`bg-white p-6 rounded-lg shadow-sm border-l-4 ${theme.kpiBorder}`}>
             <p className="text-gray-500 text-sm">En Revision</p>
             <p className={`text-3xl font-bold ${theme.accent}`}>{stats.enRevision}</p>
-          </div>
-        )}
-
-        {/* Bloqueados - destacado para oficial */}
-        {isOficial && (
-          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-500">
-            <p className="text-gray-500 text-sm">Bloqueados por Sanciones</p>
-            <p className="text-3xl font-bold text-red-600">{stats.bloqueado}</p>
-            {stats.bloqueado > 0 && (
-              <p className="text-xs text-red-500 mt-1">Requieren revision inmediata</p>
-            )}
           </div>
         )}
 
@@ -114,11 +104,18 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Rechazados - para oficial y admin */}
+        {/* Rechazados - para oficial y auditoria */}
         {!isAnalista && (
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-400">
             <p className="text-gray-500 text-sm">Rechazados</p>
             <p className="text-3xl font-bold text-red-500">{stats.rechazado}</p>
+          </div>
+        )}
+
+        {isOficial && (
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
+            <p className="text-gray-500 text-sm">Requieren Correccion</p>
+            <p className="text-3xl font-bold text-amber-500">{stats.requiereCorreccion}</p>
           </div>
         )}
       </div>
@@ -155,7 +152,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {caseFiles.slice(0, 5).map((cf) => (
+              {(isOficial || isAuditoria ? caseFiles.filter((cf) => cf.status !== 'BORRADOR') : caseFiles.slice(0, 5)).map((cf) => (
                 <tr key={cf.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                   <td className="py-3">
                     <Link to={`/case-files/${cf.id}`} className={`font-medium ${theme.accent} hover:underline`}>

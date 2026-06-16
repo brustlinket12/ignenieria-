@@ -1,4 +1,4 @@
-export type Role = 'ANALISTA' | 'OFICIAL_CUMPLIMIENTO' | 'ADMIN';
+export type Role = 'ANALISTA' | 'OFICIAL_CUMPLIMIENTO' | 'OFICIAL_AUDITORIA';
 
 export interface RoleTheme {
   primary: string;
@@ -41,24 +41,24 @@ const themes: Record<Role, RoleTheme> = {
     roleLabel: 'OFICIAL DE CUMPLIMIENTO',
     roleDescription: 'Revisión, control y decisión',
   },
-  ADMIN: {
-    primary: 'bg-slate-700',
-    primaryHover: 'hover:bg-slate-800',
-    accent: 'text-slate-700',
-    headerBg: 'bg-slate-800',
+  OFICIAL_AUDITORIA: {
+    primary: 'bg-teal-700',
+    primaryHover: 'hover:bg-teal-800',
+    accent: 'text-teal-700',
+    headerBg: 'bg-teal-800',
     headerText: 'text-white',
-    badge: 'bg-slate-100',
-    badgeText: 'text-slate-700',
-    cardBorder: 'border-l-slate-500',
-    kpiBorder: 'border-slate-500',
-    roleLabel: 'ADMIN',
-    roleDescription: 'Administración total',
+    badge: 'bg-teal-100',
+    badgeText: 'text-teal-700',
+    cardBorder: 'border-l-teal-500',
+    kpiBorder: 'border-teal-500',
+    roleLabel: 'OFICIAL DE AUDITORIA',
+    roleDescription: 'Supervisión y auditoría',
   },
 };
 
 export function getRoleTheme(role: Role | undefined): RoleTheme {
-  if (!role) return themes.ADMIN;
-  return themes[role] || themes.ADMIN;
+  if (!role) return themes.OFICIAL_AUDITORIA;
+  return themes[role] || themes.OFICIAL_AUDITORIA;
 }
 
 export function getRoleAccentColor(role: Role | undefined): string {

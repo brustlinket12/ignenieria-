@@ -11,7 +11,6 @@ from app.services.case_file_service import (
     submit_case_file,
     approve_case_file,
     reject_case_file,
-    unblock_case_file,
     get_case_file,
 )
 
@@ -89,7 +88,7 @@ class TestCaseFileService:
     def test_bloqueo_por_sanciones(self, app, user_analista, client):
         """
         Verifica que cuando un expediente tiene screening con COINCIDENCIA_CONFIRMADA,
-        debe ser bloqueado.
+        queda marcado con coincidencia en sanciones sin cambiar su estado.
         """
         from app.services.case_file_service import block_case_file_if_sanctions
 
@@ -121,39 +120,31 @@ class TestCaseFileService:
             db.session.add(assessment)
             db.session.commit()
 
-            # Aplicar bloqueo via servicio
+            # Aplicar marca de coincidencia via servicio
             block_case_file_if_sanctions(case_file.id, user_analista, screening)
 
-            # Verificar estado bloqueado
+            # Verificar flag de sanciones sin estado de bloqueo dedicado
             case_file = get_case_file(case_file.id)
-            assert case_file.status == "BLOQUEADO_POR_SANCIONES"
+            assert case_file.status == "EN_REVISION"
             assert case_file.blocked_by_sanctions is True
 
-    def test_desbloqueo_falso_positivo_solo_oficial(self, app, user_analista, user_oficial, client):
+    def test_submit_con_sanciones_va_a_revision(self, app, user_analista, client):
         """
-        CRITICO: Solo usuarios con rol OFICIAL_CUMPLIMIENTO pueden desbloquear
-        expedientes bloqueados por sanciones.
+        CRITICO: Un expediente con coincidencia en sanciones enviado queda EN_REVISION.
         """
         with app.app_context():
-            # Crear expediente bloqueado
             case_file = CaseFile(
                 client_id=client,
-                status="BLOQUEADO_POR_SANCIONES",
+                status="BORRADOR",
                 blocked_by_sanctions=True,
                 created_by=user_analista,
             )
             db.session.add(case_file)
             db.session.commit()
 
-            # Analista NO puede desbloquear
-            with pytest.raises(PermissionError) as exc_info:
-                unblock_case_file(case_file.id, user_analista, "Falso positivo")
-            assert "Solo oficiales de cumplimiento" in str(exc_info.value)
-
-            # Oficial SI puede desbloquear
-            case_file = unblock_case_file(case_file.id, user_oficial, "Falso positivo - nombre similar")
-            assert case_file.status == "DESBLOQUEADO_FALSO_POSITIVO"
-            assert case_file.blocked_by_sanctions is False
+            case_file = submit_case_file(case_file.id)
+            assert case_file.status == "EN_REVISION"
+            assert case_file.blocked_by_sanctions is True
 
     def test_aprobar_expediente(self, app, user_oficial, client):
         """Verifica que un expediente puede ser aprobado."""
@@ -205,14 +196,14 @@ class TestAuth:
             user = User.query.get(user_analista)
             assert user.check_password("wrong_password") is False
 
-    def test_solo_oficial_puede_desbloquear(self, app, user_analista, user_oficial, client):
+    def test_solo_oficial_cumplimiento_tiene_rol_de_revision(self, app, user_analista, user_oficial, client):
         """
-        Verifica que la restriccion de rol para desbloqueo funciona.
+        Verifica que la restriccion de rol de cumplimiento funciona.
         """
         with app.app_context():
             case_file = CaseFile(
                 client_id=client,
-                status="BLOQUEADO_POR_SANCIONES",
+                status="EN_REVISION",
                 blocked_by_sanctions=True,
                 created_by=user_analista,
             )

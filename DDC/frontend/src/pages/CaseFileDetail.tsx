@@ -19,16 +19,8 @@ export default function CaseFileDetail() {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [correctionNote, setCorrectionNote] = useState('');
   const [showCorrectionForm, setShowCorrectionForm] = useState(false);
-  const [unblockJustification, setUnblockJustification] = useState('');
-  const [showUnblockForm, setShowUnblockForm] = useState(false);
 
   const roleTheme = getRoleTheme(user?.role);
-
-  useEffect(() => {
-    if (id) {
-      loadCaseFile();
-    }
-  }, [id]);
 
   const loadCaseFile = async () => {
     try {
@@ -47,6 +39,12 @@ export default function CaseFileDetail() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (id) {
+      loadCaseFile();
+    }
+  }, [id]);
 
   const handleApprove = async () => {
     if (!caseFile) return;
@@ -97,26 +95,6 @@ export default function CaseFileDetail() {
     }
   };
 
-  const handleUnblock = async () => {
-    if (!caseFile || !unblockJustification.trim()) {
-      alert('La justificacion es requerida');
-      return;
-    }
-    try {
-      setActionLoading(true);
-      await api.post(`/case-files/${caseFile.id}/unblock`, {
-        justification: unblockJustification,
-      });
-      setShowUnblockForm(false);
-      setUnblockJustification('');
-      loadCaseFile();
-    } catch (error: any) {
-      alert(error.response?.data?.error || 'Error al desbloquear');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   if (loading) {
     return <div className="p-6">Cargando...</div>;
   }
@@ -129,6 +107,12 @@ export default function CaseFileDetail() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
+      {caseFile.blocked_by_sanctions === true && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 p-4 rounded text-amber-800 font-medium">
+          ⚠️ Este expediente tiene coincidencia en listas de sanciones
+        </div>
+      )}
+
       <div className="flex items-center gap-4 mb-6">
         <button onClick={() => navigate('/case-files')} className="text-gray-500 hover:text-gray-700">
           ← Volver
@@ -166,10 +150,9 @@ export default function CaseFileDetail() {
         {caseFile.risk_assessment ? (
           caseFile.risk_assessment.calculation_aborted ? (
             <div className="bg-red-50 border border-red-200 p-4 rounded">
-              <p className="text-red-700 font-medium">⚠️ CALCULO ABORTADO - BLOQUEADO POR SANCIONES</p>
+              <p className="text-red-700 font-medium">⚠️ COINCIDENCIA EN SANCIONES - El Oficial de Cumplimiento debe revisar este expediente</p>
               <p className="text-red-600 text-sm mt-1">
-                Se detecto coincidencia en listas de sanciones. El expediente no puede continuar
-                hasta ser desbloqueado por un Oficial de Cumplimiento.
+                Se detecto coincidencia en listas de sanciones.
               </p>
             </div>
           ) : (
@@ -318,55 +301,6 @@ export default function CaseFileDetail() {
                   className="flex-1 bg-amber-500 text-white py-2 rounded hover:bg-amber-600 disabled:opacity-50"
                 >
                   {actionLoading ? 'Procesando...' : 'Confirmar Correccion'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {caseFile.status === 'BLOQUEADO_POR_SANCIONES' && isOfficial && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6 border-l-4 border-red-500">
-          <h2 className="text-lg font-semibold mb-4 text-red-600">Expediente Bloqueado</h2>
-          <p className="text-gray-600 mb-4">
-            Este expediente fue bloqueado debido a coincidencia con lista de sanciones.
-            Solo un Oficial de Cumplimiento puede desbloquearlo marcando como falso positivo.
-          </p>
-
-          {!showUnblockForm && (
-            <button
-              onClick={() => setShowUnblockForm(true)}
-              className={`${roleTheme.primary} text-white px-6 py-3 rounded ${roleTheme.primaryHover}`}
-            >
-              Desbloquear como Falso Positivo
-            </button>
-          )}
-
-          {showUnblockForm && (
-            <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
-              <h3 className="font-medium text-gray-700 mb-2">Desbloquear como Falso Positivo</h3>
-              <p className="text-sm text-gray-600 mb-3">Debe justificar por que este expediente no representa un riesgo real:</p>
-              <textarea
-                value={unblockJustification}
-                onChange={(e) => setUnblockJustification(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                rows={3}
-                placeholder="Justificacion requerida..."
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setShowUnblockForm(false); setUnblockJustification(''); }}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleUnblock}
-                  disabled={actionLoading || !unblockJustification.trim()}
-                  className={`flex-1 ${roleTheme.primary} text-white py-2 rounded ${roleTheme.primaryHover} disabled:opacity-50`}
-                >
-                  {actionLoading ? 'Procesando...' : 'Confirmar Desbloqueo'}
                 </button>
               </div>
             </div>

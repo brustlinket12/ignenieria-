@@ -2,7 +2,7 @@ export type User = {
   id: number;
   email: string;
   name: string;
-  role: 'ANALISTA' | 'OFICIAL_CUMPLIMIENTO' | 'ADMIN';
+  role: 'ANALISTA' | 'OFICIAL_CUMPLIMIENTO' | 'OFICIAL_AUDITORIA';
   created_at: string;
 };
 
@@ -64,7 +64,7 @@ export type CaseFile = {
   id: number;
   client_id: number;
   client: Client;
-  status: 'BORRADOR' | 'EN_REVISION' | 'APROBADO' | 'RECHAZADO' | 'BLOQUEADO_POR_SANCIONES' | 'DESBLOQUEADO_FALSO_POSITIVO';
+  status: 'BORRADOR' | 'EN_REVISION' | 'APROBADO' | 'RECHAZADO' | 'REQUIERE_CORRECCION';
   current_step: number;
   blocked_by_sanctions: boolean;
   created_by: number;

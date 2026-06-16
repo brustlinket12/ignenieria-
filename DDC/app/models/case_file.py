@@ -21,7 +21,7 @@ class CaseFile(db.Model):
     rejected_at = db.Column(db.DateTime, nullable=True)
     rejection_reason = db.Column(db.Text, nullable=True)  # Razon de rechazo o correccion requerida
 
-    # Estados: BORRADOR, EN_REVISION, APROBADO, RECHAZADO, BLOQUEADO_POR_SANCIONES, DESBLOQUEADO_FALSO_POSITIVO, REQUIERE_CORRECCION
+    # Estados: BORRADOR, EN_REVISION, APROBADO, RECHAZADO, REQUIERE_CORRECCION
 
     # Relaciones
     client = db.relationship("Client", back_populates="case_files")

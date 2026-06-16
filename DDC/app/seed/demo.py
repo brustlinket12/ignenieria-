@@ -23,7 +23,7 @@ def seed_demo():
     users_data = [
         {"email": "analista@demo.com", "password": "password123", "name": "Analista Demo", "role": "ANALISTA"},
         {"email": "oficial@demo.com", "password": "password123", "name": "Oficial Cumplimiento Demo", "role": "OFICIAL_CUMPLIMIENTO"},
-        {"email": "admin@demo.com", "password": "password123", "name": "Admin Demo", "role": "ADMIN"},
+        {"email": "auditoria@demo.com", "password": "password123", "name": "Oficial Auditoria Demo", "role": "OFICIAL_AUDITORIA"},
     ]
 
     users = {}
@@ -91,10 +91,10 @@ def seed_demo():
         matched_list="LISTA_BLOQUEO_DEMO",
     )
 
-    # Expediente 3: Sancionado en BLOQUEADO_POR_SANCIONES
+    # Expediente 3: Sancionado en EN_REVISION con flag de sanciones
     case3 = CaseFile(
         client_id=clients[2].id,
-        status="BLOQUEADO_POR_SANCIONES",
+        status="EN_REVISION",
         current_step=2,
         blocked_by_sanctions=True,
         created_by=users["ANALISTA"].id,
@@ -159,11 +159,11 @@ def seed_demo():
     print("Usuarios:")
     print("  - analista@demo.com / password123 (ANALISTA)")
     print("  - oficial@demo.com / password123 (OFICIAL_CUMPLIMIENTO)")
-    print("  - admin@demo.com / password123 (ADMIN)")
+    print("  - auditoria@demo.com / password123 (OFICIAL_AUDITORIA)")
     print("\nExpedientes:")
     print(f"  - Expediente ID 1: Normal, BORRADOR")
     print(f"  - Expediente ID 2: Alto riesgo (MUY_ALTO), EN_REVISION")
-    print(f"  - Expediente ID 3: BLOQUEADO_POR_SANCIONES")
+    print(f"  - Expediente ID 3: EN_REVISION con coincidencia en sanciones")
 
 
 @click.command("seed-demo")

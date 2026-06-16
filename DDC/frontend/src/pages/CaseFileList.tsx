@@ -14,13 +14,10 @@ export default function CaseFileList() {
   const [filter, setFilter] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-  const theme = getRoleTheme(user?.role as any);
+  const theme = getRoleTheme(user?.role);
   const isAnalista = user?.role === 'ANALISTA';
-  const isAdmin = user?.role === 'ADMIN';
-
-  useEffect(() => {
-    loadCaseFiles();
-  }, [filter]);
+  const isOficialCumplimiento = user?.role === 'OFICIAL_CUMPLIMIENTO';
+  const isOficialAuditoria = user?.role === 'OFICIAL_AUDITORIA';
 
   const loadCaseFiles = async () => {
     try {
@@ -35,11 +32,15 @@ export default function CaseFileList() {
     }
   };
 
+  useEffect(() => {
+    loadCaseFiles();
+  }, [filter]);
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Expedientes</h1>
-        {(isAnalista || isAdmin) && (
+        {(isAnalista || isOficialAuditoria) && (
           <button
             onClick={() => navigate('/case-files/new')}
             className={`px-5 py-2.5 rounded-lg font-medium text-white transition-colors ${theme.primary} ${theme.primaryHover}`}
@@ -59,14 +60,16 @@ export default function CaseFileList() {
         >
           Todos
         </button>
-        <button
-          onClick={() => setFilter('BORRADOR')}
-          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-            filter === 'BORRADOR' ? `${theme.primary} text-white` : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          Borrador
-        </button>
+        {!isOficialCumplimiento && !isOficialAuditoria && (
+          <button
+            onClick={() => setFilter('BORRADOR')}
+            className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+              filter === 'BORRADOR' ? `${theme.primary} text-white` : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Borrador
+          </button>
+        )}
         <button
           onClick={() => setFilter('EN_REVISION')}
           className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
@@ -74,14 +77,6 @@ export default function CaseFileList() {
           }`}
         >
           En Revision
-        </button>
-        <button
-          onClick={() => setFilter('BLOQUEADO_POR_SANCIONES')}
-          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-            filter === 'BLOQUEADO_POR_SANCIONES' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          Bloqueados
         </button>
       </div>
 

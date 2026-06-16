@@ -119,7 +119,7 @@ def calculate_risk(case_file_id, risk_data):
     - calculation_aborted = True
     - total_score = None
     - risk_level = None
-    - El expediente debe ser bloqueado por el caller
+    - El expediente debe marcarse con coincidencia en sanciones por el caller
     """
     case_file = CaseFile.query.get(case_file_id)
     if not case_file:
